@@ -8,6 +8,8 @@ import java.awt.Component;
 import java.awt.Window;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.security.AllPermission;
+import java.security.Permission;
 import java.util.logging.Logger;
 
 import javax.jnlp.ClipboardService;
@@ -63,7 +65,8 @@ public class DemoUtils {
         SecurityManager manager = System.getSecurityManager();
         if (manager == null) return false;
         try {
-            manager.checkSystemClipboardAccess();
+        	Permission perm = new AllPermission(); // == SecurityConstants.ALL_PERMISSION
+            manager.checkPermission(perm);
             return false;
         } catch (SecurityException e) {
             // nothing to do - not allowed to access
