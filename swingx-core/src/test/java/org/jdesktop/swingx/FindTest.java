@@ -22,6 +22,7 @@
 package org.jdesktop.swingx;
 
 import java.net.URL;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jdesktop.swingx.JXEditorPane.DocumentSearchable;
@@ -109,6 +110,19 @@ public class FindTest extends InteractiveTestCase {
         editor.setText(text);
         // initialize to found state
         int foundIndex = editor.getSearchable().search("ou");
+/* JXEditorPane.java:754 :
+ *             lastRegEx = ((Matcher) lastMatchResult).pattern().pattern();
+
+java.lang.ClassCastException: class java.util.regex.Matcher$ImmutableMatchResult cannot be cast to class java.util.regex.Matcher (java.util.regex.Matcher$ImmutableMatchResult and java.util.regex.Matcher are in module java.base of loader 'bootstrap')
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.updateStateAfterFound(JXEditorPane.java:754)
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.search(JXEditorPane.java:682)
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.search(JXEditorPane.java:605)
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.search(JXEditorPane.java:596)
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.search(JXEditorPane.java:591)
+	at org.jdesktop.swingx.FindTest.testEditorResetStateOnNullPattern(FindTest.java:111)
+
+ */
+        
         // sanity
         assertEquals(1, foundIndex);
         // search with null searchString
@@ -130,6 +144,15 @@ public class FindTest extends InteractiveTestCase {
             int lastIndex = -1;
             for (int i = 0; i < 9; i++) {
                 lastIndex = editor.getSearchable().search("four", useIndex);
+/*
+Caused by: java.lang.NullPointerException: Cannot invoke "java.util.regex.MatchResult.group()" because "this.lastMatchResult" is null
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.foundExtendedMatch(JXEditorPane.java:723)
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.search(JXEditorPane.java:650)
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.search(JXEditorPane.java:605)
+	at org.jdesktop.swingx.JXEditorPane$DocumentSearchable.search(JXEditorPane.java:596)
+	at org.jdesktop.swingx.FindTest.testEditor(FindTest.java:146)
+
+ */
                 assertTrue(lastIndex != -1);
                 assertTrue(lastIndex != useIndex);
 
