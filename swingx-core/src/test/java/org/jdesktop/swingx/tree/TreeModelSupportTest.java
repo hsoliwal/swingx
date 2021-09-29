@@ -77,7 +77,7 @@ public class TreeModelSupportTest extends TestCase {
         try {
             support.firePathChanged(path);
             fail("must not allow null path elements");
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
             // expected
         } 
         // unexpected exception
@@ -129,7 +129,7 @@ public class TreeModelSupportTest extends TestCase {
         try {
             support.fireTreeStructureChanged(path);
             fail("must not allow null path elements");
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
             // expected
         } 
         // unexpected exception
