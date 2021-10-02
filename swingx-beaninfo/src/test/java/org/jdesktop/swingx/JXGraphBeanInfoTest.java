@@ -1,5 +1,7 @@
 package org.jdesktop.swingx;
 
+import java.beans.PropertyChangeListener;
+
 import org.jdesktop.beans.AbstractBeanInfoTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -8,6 +10,15 @@ public class JXGraphBeanInfoTest extends AbstractBeanInfoTest<JXGraph> {
     @Override
     protected JXGraph createInstance() {
         return new JXGraph();
+    }
+    JXGraph getInstance() {
+    	return super.instance;
+    }
+    protected PropertyChangeListener[] getPropertyChangeListener() {
+    	return getInstance().getListeners(PropertyChangeListener.class);
+    }
+    protected void addPropertyChangeListener(PropertyChangeListener pcl) {
+    	getInstance().addPropertyChangeListener(pcl);
     }
     
     /**
