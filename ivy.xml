@@ -1,0 +1,6 @@
+<ivy-module version="2.0">
+    <info organisation="org.jdesktop" module="swingx-all" status="integration" />
+    
+    <dependencies>
+    </dependencies>
+</ivy-module>
