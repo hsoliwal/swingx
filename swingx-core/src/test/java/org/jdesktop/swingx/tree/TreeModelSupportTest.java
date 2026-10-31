@@ -73,14 +73,17 @@ public class TreeModelSupportTest extends TestCase {
      */
     @Test
     public void testPathChangedNotNullPathElements() {
-        TreePath path = new TreePath(new Object[] {null});
-        try {
-            support.firePathChanged(path);
-            fail("must not allow null path elements");
-        } catch (NullPointerException e) {
-            // expected
-        } 
-        // unexpected exception
+    	try {
+            TreePath path = new TreePath(new Object[] {null});
+            try {
+                support.firePathChanged(path);
+                fail("must not allow null path elements");
+            } catch (NullPointerException e) {
+                // expected
+            } 
+        } catch (IllegalArgumentException e) {
+        	// expected in 1.8 or later
+    	}
     }
     
     /**
@@ -125,14 +128,17 @@ public class TreeModelSupportTest extends TestCase {
      */
     @Test
     public void testTreeStructureChangedNotNullPathElements() {
-        TreePath path = new TreePath(new Object[] {null});
-        try {
-            support.fireTreeStructureChanged(path);
-            fail("must not allow null path elements");
-        } catch (NullPointerException e) {
-            // expected
-        } 
-        // unexpected exception
+    	try {
+            TreePath path = new TreePath(new Object[] {null});
+            try {
+                support.fireTreeStructureChanged(path);
+                fail("must not allow null path elements");
+            } catch (NullPointerException e) {
+                // expected
+            } 
+        } catch (IllegalArgumentException e) {
+            // expected in 1.8 or later
+    	}
     }
     
 

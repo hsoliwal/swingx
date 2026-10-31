@@ -719,7 +719,7 @@ public class JXEditorPane extends JEditorPane implements /*Searchable, */Targeta
                 // JW: how to compare match results reliably?
                 // the group().equals probably isn't the best idea...
                 // better check pattern?
-                if ((currentResult.start() == 0) && 
+                if ((currentResult.start() == 0) && lastMatchResult!=null &&
                    (!lastMatchResult.group().equals(currentResult.group()))) {
                     updateStateAfterFound(currentResult, start);
                     return true;
@@ -750,8 +750,11 @@ public class JXEditorPane extends JEditorPane implements /*Searchable, */Targeta
             select(found, end);
             getCaret().setSelectionVisible(true);
             lastFoundIndex = found;
-            lastMatchResult = currentResult;
-            lastRegEx = ((Matcher) lastMatchResult).pattern().pattern();
+            if(currentResult instanceof Matcher) {
+                lastMatchResult = currentResult;
+                Matcher lmr = (Matcher) lastMatchResult;
+                lastRegEx = lmr.pattern().pattern();
+            }
             return found;
         }
 
