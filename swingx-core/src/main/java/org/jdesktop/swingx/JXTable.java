@@ -1,5 +1,5 @@
 /*
- * $Id: JXTable.java 4301 2013-07-04 12:36:17Z kleopatra $
+ * $Id: JXTable.java 4266 2012-12-05 16:34:37Z kleopatra $
  *
  * Copyright 2004 Sun Microsystems, Inc., 4150 Network Circle,
  * Santa Clara, California 95054, U.S.A. All rights reserved.
@@ -21,7 +21,6 @@
 
 package org.jdesktop.swingx;
 
-import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -32,7 +31,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
 import java.awt.print.PrinterException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -139,37 +137,33 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * 
  * <h2>Sorting and Filtering</h2>
  * 
- * JXTable supports sorting and filtering of rows (switched to core sorting).
+ * JXTable supports sorting and filtering of rows (switched to core sorting). 
  * 
- * Additionally, it provides api to apply a specific sort order, to toggle the
- * sort order of columns identified by view index or column identifier and to
- * reset all sorts. F.i:
+ * Additionally, it provides api to apply
+ * a specific sort order, to toggle the sort order of columns identified 
+ * by view index or column identifier and to reset all sorts. F.i: 
  * 
- * <pre>
- * <code>
+ * <pre><code>
  * table.setSortOrder("PERSON_ID", SortOrder.DESCENDING);
  * table.toggleSortOder(4);
  * table.resetSortOrder();
- * </code>
- * </pre>
+ * </code></pre>
  * 
  * Sorting sequence can be configured per column by setting the TableColumnExt's
- * <code>comparator</code> property. Sorting can be disabled per column -
- * setting the TableColumnExt's <code>sortable</code> or per table by
- * {@link #setSortable(boolean)}. The table takes responsibility to propagate
- * these properties to the current sorter, if available
- * <p>
+ * <code>comparator</code> property. Sorting can be disabled per column - setting the TableColumnExt's
+ * <code>sortable</code> or per table by {@link #setSortable(boolean)}. 
+ * The table takes responsibility to propagate these
+ * properties to the current sorter, if available <p>
  * 
- * Note that the enhanced sorting controls are effective only if the RowSorter
- * is of type SortController, which it is by default. Different from core
- * JTable, the autoCreateRowSorter property is enabled by default. If on, the
- * JXTable creates and uses a default row sorter as returned by the
- * createDefaultRowSorter method.
+ * Note that the enhanced sorting controls are effective only if the RowSorter is 
+ * of type SortController, which it is by default. Different from core JTable, the 
+ * autoCreateRowSorter property is enabled by default. If on, the JXTable creates and
+ * uses a default row sorter as returned by the createDefaultRowSorter method.
  * 
  * <p>
- * Typically, a JXTable is sortable by left clicking on column headers. By
- * default, each subsequent click on a header reverses the order of the sort,
- * and a sort arrow icon is automatically drawn on the header.
+ * Typically, a JXTable is sortable by left clicking on column headers. By default, each
+ * subsequent click on a header reverses the order of the sort, and a sort arrow
+ * icon is automatically drawn on the header. 
  * 
  * <p>
  * 
@@ -185,8 +179,7 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * current LookAndFeel, cell foreground on matching pattern, and shading a
  * column):
  * 
- * <pre>
- * <code>
+ * <pre><code>
  * 
  * Highlighter simpleStriping = HighlighterFactory.createSimpleStriping();
  * PatternPredicate patternPredicate = new PatternPredicate(&quot;&circ;M&quot;, 1);
@@ -198,8 +191,7 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * table.setHighlighters(simpleStriping,
  *        magenta,
  *        shading);
- * </code>
- * </pre>
+ * </code></pre>
  * 
  * <p>
  * To fully support, JXTable registers SwingX default table renderers instead of
@@ -209,8 +201,7 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * File and should be rendered by showing its name followed and date of last
  * change:
  * 
- * <pre>
- * <code>
+ * <pre><code>
  * StringValue sv = new StringValue() {
  *      public String getString(Object value) {
  *        if (!(value instanceof File)) return StringValues.TO_STRING.getString(value);
@@ -218,14 +209,12 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  *           + StringValues.DATE_TO_STRING.getString(((File) value).lastModified());
  * }};
  * table.setCellRenderer(File.class, new DefaultTableRenderer(sv));
- * </code>
- * </pre>
+ * </code></pre>
  * 
- * In addition to super default per-class registration, JXTable registers a
- * default renderer for <code>URI</code>s which opens the default application to
- * view the related document as supported by <code>Desktop</code>. Note: this
- * action is triggered only if rolloverEnabled is true (default value) and the
- * cell is not editable.
+ * In addition to super default per-class registration, JXTable registers a default
+ * renderer for <code>URI</code>s which opens the default application to view the related
+ * document as supported by <code>Desktop</code>. Note: this action is triggered only if 
+ * rolloverEnabled is true (default value) and the cell is not editable.
  * 
  * <p>
  * <b>Note</b>: DefaultTableCellRenderer and subclasses require a hack to play
@@ -237,26 +226,23 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * 
  * <b>Note</b>: by default JXTable disables the alternate row striping provided
  * by Nimbus, instead it does use the color provided by Nimbus to configure the
- * UIColorHighlighter. Like in any other LAF without striping support, client
- * code has to explicitly turn on striping by setting a Highlighter like:
+ * UIColorHighlighter. Like in any other LAF without striping support, 
+ * client code has to explicitly turn on striping by 
+ * setting a Highlighter like:
  * 
- * <pre>
- * <code>
+ * <pre><code>
  * table.addHighlighter(HighlighterFactory.createSimpleStriping());
- * </code>
- * </pre>
+ * </code></pre>
  * 
  * Alternatively, if client code wants to rely on the LAF provided striping
  * support, it can set a property in the UIManager ("early" in the application
- * lifetime to prevent JXTable to disable Nimbus handling it. In this case it is
+ * lifetime to prevent JXTable to disable Nimbus handling it. In this case it is 
  * recommended to not any of the ui-dependent Highlighters provided by the
  * HighlighterFactory.
  * 
- * <pre>
- * <code>
+ * <pre><code>
  * UIManager.put("Nimbus.keepAlternateRowColor", Boolean.TRUE);
- * </code>
- * </pre>
+ * </code></pre>
  * 
  * <h2>Rollover</h2>
  * 
@@ -267,37 +253,11 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * events can be used by client code as well, f.i. to decorate the rollover row
  * using a Highlighter.
  * 
- * <pre>
- * <code>
+ * <pre><code>
  * JXTable table = new JXTable();
  * table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
  *      null, Color.RED);      
- * </code>
- * </pre>
- * 
- * <h2>Location of Trigger for ComponentPopupMenu</h2>
- * 
- * JXTable allows access to the mouse location that triggered the showing of the
- * componentPopupMenu. This feature allows to implement dynamic cell-context
- * sensitive popupMenus, either in the menu actions or in a PopupMenuListener.
- * <p>
- * 
- * The example below selects the cell that was clicked, event being the
- * <code>PopupMenuEvent</code> received in a  
- * <code>PopupMenuListener</code>.<p>
- * 
- * <pre>
- * <code>
- * JXTable table = (JXTable) ((JPopupMenu) e.getSource()).getInvoker();
- * Point trigger = table.getPopupTriggerLocation();
- * if (trigger != null) {
- *     int row = table.rowAtPoint(trigger);
- *     int column = table.columnAtPoint(trigger);
- *     table.setRowSelectionInterval(row, row);
- *     table.setColumnSelectionInterval(column, column);
- * } 
- * </code>
- * </pre>
+ * </code></pre>
  * 
  * <h2>Search</h2>
  * 
@@ -316,10 +276,11 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * 
  * <h2>Column Configuration</h2>
  * 
- * JXTable's default column model is of type TableColumnModelExt which allows
- * management of hidden columns. Furthermore, it guarantees to delegate creation
- * and configuration of table columns to its ColumnFactory. The factory is meant
- * as the central place to customize column configuration.
+ * JXTable's default column model
+ * is of type TableColumnModelExt which allows management of hidden columns. 
+ * Furthermore, it guarantees to delegate creation and configuration of table columns
+ * to its ColumnFactory. The factory is meant as the central place to 
+ * customize column configuration.
  * 
  * <p>
  * Columns can be hidden or shown by setting the visible property on the
@@ -551,8 +512,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     private transient StringValueRegistry stringValueRegistry;
 
     private SortOrder[] sortOrderCycle;
-
-    private Point popupTriggerLocation;
     
 
     /** Instantiates a JXTable with a default table model, no data. */
@@ -610,7 +569,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * @param rowData Row data, as a Vector of Objects.
      * @param columnNames Column names, as a Vector of Strings.
      */
-    public JXTable(Vector<?> rowData, Vector<?> columnNames) {
+    public JXTable(Vector<? extends Vector> rowData, Vector<?> columnNames) {
         super(rowData, columnNames);
         init();
     }
@@ -745,52 +704,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
         return new TableRolloverProducer();
     }
 
-//---------------------- enhanced component popup support
-    
-    /**
-     * {@inheritDoc} <p>
-     * 
-     * Overridden for bookkeeping: the given event location is 
-     * stored for later access.
-     * 
-     * @see #getPopupTriggerLocation()
-     */
-    @Override
-    public Point getPopupLocation(MouseEvent event) {
-        updatePopupTrigger(event);
-        return super.getPopupLocation(event);
-    }
-    
-    /**
-     * Handles internal bookkeeping related to popupLocation, called from 
-     * getPopupLocation.<p>
-     * 
-     * This implementation stores the mouse location as popupTriggerLocation.
-     * 
-     * @param event the event that triggered the showing of the 
-     * componentPopup, might be null if triggered by keyboard
-     */
-    protected void updatePopupTrigger(MouseEvent event) {
-        Point old = getPopupTriggerLocation();
-        // note: getPoint creates a new Point on each call, safe to use as-is
-        popupTriggerLocation = event != null ? event.getPoint() : null;
-        firePropertyChange("popupTriggerLocation", old, getPopupTriggerLocation());
-    }
 
-    /**
-     * Returns the location of the mouseEvent that triggered the
-     * showing of the ComponentPopupMenu. 
-     * 
-     * @return the location of the mouseEvent that triggered the
-     * last showing of the ComponentPopup, or null if it was
-     * triggered by keyboard.
-     */
-    public Point getPopupTriggerLocation() {
-        return popupTriggerLocation != null ? new Point(popupTriggerLocation) : null;
-    }
-    
-//------------------- column control
-    
     /**
      * Returns the column control visible property.
      * <p>
@@ -802,7 +716,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     public boolean isColumnControlVisible() {
         return columnControlVisible;
     }
-
 
     /**
      * Sets the column control visible property. If true and
@@ -890,7 +803,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * 
      * @return the default component used as column control.
      * @see #setColumnControl(JComponent)
-     * @see org.jdesktop.swingx.table.ColumnControlButton
+     * @see ColumnControlButton
      * @see org.jdesktop.swingx.icon.ColumnControlIcon
      */
     protected JComponent createDefaultColumnControl() {
@@ -908,7 +821,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * <p>
      * 
      * @param o the ComponentOrientation for this table.
-     * @see java.awt.Component#setComponentOrientation(ComponentOrientation)
+     * @see Component#setComponentOrientation(ComponentOrientation)
      */
     @Override
     public void setComponentOrientation(ComponentOrientation o) {
@@ -1617,7 +1530,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * configuration is applied.
      * 
      * @see #tableChanged(TableModelEvent)
-     * @see org.jdesktop.swingx.table.ColumnFactory
+     * @see ColumnFactory
      * 
      */
     @Override
@@ -2485,35 +2398,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
         return null;
     }
 
-    /**
-     * Returns the TableColumn at the given location or null if
-     * the location is outside.
-     * 
-     * @param point the location to return the column for
-     * @return the tableColumn at the location or null
-     * 
-     * @see #getColumnExt(Point)
-     */
-    public TableColumn getColumn(Point p) {
-        int columnIndex = columnAtPoint(p);
-        return columnIndex < 0 ? null : getColumn(columnIndex);
-    }
-    
-    /**
-     * Returns the TableColumnExt at the given location or null if
-     * the location is outside or the column is not of type 
-     * <code>TableColumnExt</code>.
-     * 
-     * @param point the location to return the column for
-     * @return the tableColumnExt at the location or null
-     *     
-     * @see #getColumn(Point)
-     * @see JXTableHeader#getColumnExt(Point)
-     */
-    public TableColumnExt getColumnExt(Point p) {
-        TableColumn column = getColumn(p);
-        return (TableColumnExt) (column instanceof TableColumnExt ? column : null);
-    }
     // ---------------------- enhanced TableColumn/Model support: convenience
 
     /**
@@ -2632,7 +2516,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * 
      * @param column the <code>TableColumn</code> which sent the change
      *        notifcation
-     * @param sortable the new value of the column's sortable property
+     * @param comparator the new value of the column's sortable property
      */
     private void updateComparatorAfterColumnChanged(TableColumn column,
             Comparator<?> comparator) {
@@ -2658,7 +2542,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * overrides by a custom ColumnFactory)!
      * 
      * @see #setColumnFactory(ColumnFactory)
-     * @see org.jdesktop.swingx.table.ColumnFactory
+     * @see ColumnFactory
      * 
      */
     @Override
@@ -2723,7 +2607,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      *         guaranteed to not be null.
      * 
      * @see #setColumnFactory(ColumnFactory)
-     * @see org.jdesktop.swingx.table.ColumnFactory
+     * @see ColumnFactory
      */
     public ColumnFactory getColumnFactory() {
         /*
@@ -2754,7 +2638,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      *        use the shared application factory.
      * 
      * @see #getColumnFactory()
-     * @see org.jdesktop.swingx.table.ColumnFactory
+     * @see ColumnFactory
      */
     public void setColumnFactory(ColumnFactory columnFactory) {
         /*
@@ -2939,7 +2823,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * in custom factories.
      * 
      * @see #setPreferredScrollableViewportSize(Dimension)
-     * @see org.jdesktop.swingx.table.ColumnFactory#getPreferredScrollableViewportWidth(JXTable)
+     * @see ColumnFactory#getPreferredScrollableViewportWidth(JXTable)
      */
     @Override
     public Dimension getPreferredScrollableViewportSize() {
@@ -3000,7 +2884,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * TODO JW - need to cleanup getScrollablePreferred (refactor and inline)
      * 
      * @param column TableColumn object representing view column
-     * @see org.jdesktop.swingx.table.ColumnFactory#configureColumnWidths
+     * @see ColumnFactory#configureColumnWidths
      */
     protected void initializeColumnPreferredWidth(TableColumn column) {
         if (column instanceof TableColumnExt) {
@@ -3105,7 +2989,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * @return a not-null Searchable for this component.
      * 
      * @see #setSearchable(Searchable)
-     * @see org.jdesktop.swingx.search.TableSearchable
+     * @see TableSearchable
      */
     public Searchable getSearchable() {
         if (searchable == null) {
@@ -3167,7 +3051,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
         /**
          * Typesafe accessor for the target component.
          * 
-         * @return the target component as a {@link javax.swing.JTable}
+         * @return the target component as a {@link JTable}
          */
         public JXTable getTable() {
             return table;
@@ -3190,7 +3074,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
          * @param modelColumn the column index in model coordinates, must be valid
          * @return the first contained TableColumn with the given model index, or
          *   null if none is found
-         * @throws IllegalArgumentExcetpion if model index invalid  
+         * @throws IllegalArgumentException if model index invalid
          */
         protected TableColumn getColumnByModelIndex(int modelColumn) {
             if ((modelColumn < 0) || (modelColumn >= getColumnCount())) {
@@ -3644,7 +3528,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * @return the decorated <code>Component</code> used as a stamp to render
      *         the specified cell
      * @see #resetDefaultTableCellRendererColors(Component, int, int)
-     * @see org.jdesktop.swingx.decorator.Highlighter
+     * @see Highlighter
      */
     @Override
     public Component prepareRenderer(TableCellRenderer renderer, int row,
@@ -3684,7 +3568,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * Convenience method to get the rendering component for the given cell.
      * 
      * @param row the row of the cell to render, where 0 is the first row
-     * @param column the column of the cell to render, where 0 is the first
+     * @param col the column of the cell to render, where 0 is the first
      *        column
      * @return the decorated <code>Component</code> used as a stamp to render
      *         the specified cell
@@ -3719,7 +3603,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * 
      * @see #prepareRenderer(TableCellRenderer, int, int)
      * @see #USE_DTCR_COLORMEMORY_HACK
-     * @see org.jdesktop.swingx.decorator.ResetDTCRColorHighlighter
+     * @see ResetDTCRColorHighlighter
      */
     protected void resetDefaultTableCellRendererColors(Component renderer,
             int row, int column) {
@@ -3780,7 +3664,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * <p>
      * {@inheritDoc}
      * 
-     * @see org.jdesktop.swingx.renderer.DefaultTableRenderer
+     * @see DefaultTableRenderer
      * @see org.jdesktop.swingx.renderer.ComponentProvider
      */
     @Override
@@ -4257,7 +4141,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
                         // PENDING JW: left-over? we should never reach this ...
                         // need to switch the hierarchy to a popups invoker
                     } else if ((c instanceof Window)
-                            || (c instanceof Applet && c.getParent() == null)) {
+                            || (SwingXUtilities.isApplet(c) && c.getParent() == null)) {
                         if (c == SwingUtilities.getRoot(JXTable.this)) {
                             if (!getCellEditor().stopCellEditing()) {
                                 getCellEditor().cancelCellEditing();
@@ -4390,7 +4274,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Updates highlighter after <code>updateUI</code> changes.
      * 
-     * @see org.jdesktop.swingx.plaf.UIDependent
+     * @see UIDependent
      */
     protected void updateHighlighterUI() {
         if (compoundHighlighter == null)
@@ -4439,8 +4323,8 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      *        grid lines.
      * @param showVerticalLines boolean to decide whether to draw vertical grid
      *        lines.
-     * @see javax.swing.JTable#setShowGrid(boolean)
-     * @see javax.swing.JTable#setIntercellSpacing(Dimension)
+     * @see JTable#setShowGrid(boolean)
+     * @see JTable#setIntercellSpacing(Dimension)
      */
     public void setShowGrid(boolean showHorizontalLines,
             boolean showVerticalLines) {
@@ -4537,7 +4421,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * 
      * Overridden to return a <code>DefaultTableColumnModelExt</code>.
      * 
-     * @see org.jdesktop.swingx.table.DefaultTableColumnModelExt
+     * @see DefaultTableColumnModelExt
      */
     @Override
     protected TableColumnModel createDefaultColumnModel() {
