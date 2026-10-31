@@ -7,9 +7,7 @@
 
 package org.jdesktop.swingx.table;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.jdesktop.test.matchers.Matchers.property;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -23,6 +21,7 @@ import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import org.hamcrest.Matcher;
 import org.jdesktop.swingx.InteractiveTestCase;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.event.TableColumnModelExtListener;
@@ -32,6 +31,7 @@ import org.jdesktop.test.matchers.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.ArgumentMatcher;
 
 
 /**
@@ -229,7 +229,20 @@ public class TableColumnModelTest extends InteractiveTestCase {
         columnModel.addColumnModelListener(l);
         columnModel.getColumnExt(identifier).setVisible(true);
         
-        verify(l).columnPropertyChange(argThat(is(property("visible", false, true))));
+//        verify(l).columnPropertyChange(argThat(is(property("visible", false, true))));
+//        Matcher<PropertyChangeEvent> am = property("visible", false, true);
+//        Matcher<PropertyChangeEvent> pce = is(am);
+        //verify(l).columnPropertyChange(argThat( (ArgumentMatcher<PropertyChangeEvent>)(is(property("visible", false, true))) ));
+        Matcher<PropertyChangeEvent> m = Matchers.property("visible", false, true);
+     // can cast PropertyChangeEventMatcher to org.mockito.ArgumentMatchers:
+        ArgumentMatcher<PropertyChangeEvent> am = (ArgumentMatcher<PropertyChangeEvent>)m;
+        verify(l).columnPropertyChange(argThat(am));
+/*
+[ERROR] Tests run: 22, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.691 s <<< FAILURE! - in org.jdesktop.swingx.table.TableColumnModelTest
+[ERROR] testShowTableColumnPropertyNotification(org.jdesktop.swingx.table.TableColumnModelTest)  Time elapsed: 0.396 s  <<< ERROR!
+java.lang.ClassCastException: class org.hamcrest.core.Is cannot be cast to class org.mockito.ArgumentMatcher (org.hamcrest.core.Is and org.mockito.ArgumentMatcher are in unnamed module of loader 'app')
+	at org.jdesktop.swingx.table.TableColumnModelTest.testShowTableColumnPropertyNotification(TableColumnModelTest.java:237)
+ */
     }
     
 

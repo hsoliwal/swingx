@@ -110,7 +110,7 @@ public class TreeTableHelper {
         public PostorderEnumeration(TreeNode rootNode) {
             super();
             root = rootNode;
-            children = root.children();
+            children = (Enumeration<TreeNode>) root.children();
             subtree = DefaultMutableTreeNode.EMPTY_ENUMERATION;
         }
 
@@ -231,8 +231,8 @@ public class TreeTableHelper {
         
 }
 
-    public static class Node extends DefaultMutableTreeNode implements
-            MutableTreeTableNode {
+    @SuppressWarnings("serial")
+    public static class Node extends DefaultMutableTreeNode implements MutableTreeTableNode {
 
         Node(Object[] d) {
             super(d);
