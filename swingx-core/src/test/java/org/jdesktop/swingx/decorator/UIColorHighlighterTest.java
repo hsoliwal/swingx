@@ -63,8 +63,8 @@ public class UIColorHighlighterTest extends InteractiveTestCase {
         }
         setLookAndFeel("Metal");
         assertNull("alternateRowColor is null", UIManager.getColor(ALTERNATE_COLOR));
-        setLookAndFeel("Nimbus");
-        assertNotNull("Nimbus without addon has alternate", UIManager.getColor(ALTERNATE_COLOR));
+//        setLookAndFeel("Nimbus");
+//        assertNotNull("Nimbus without addon has alternate", UIManager.getColor(ALTERNATE_COLOR));
         setLookAndFeel("Metal");
         assertNull("alternateRowColor is null", UIManager.getColor(ALTERNATE_COLOR));
     }

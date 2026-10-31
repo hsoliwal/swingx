@@ -38,6 +38,9 @@ public class JVM {
   public final static int JDK1_6 = 1600;
   public final static int JDK1_6N = 1610;
   public final static int JDK1_7 = 1700;
+  public final static int JDK1_8 = 1800;
+  public final static int JDK1_9 = 1900;
+
 
   private static JVM current;
   static {
@@ -66,7 +69,11 @@ public class JVM {
    * Constructor for the OS object
    */
   public JVM(String p_JavaVersion) {
-    if (p_JavaVersion.startsWith("1.7.")) {
+    if (p_JavaVersion.startsWith("1.9.")) {
+      jdkVersion = JDK1_9;
+    } else  if (p_JavaVersion.startsWith("1.8.")) {
+      jdkVersion = JDK1_8;
+    } else if (p_JavaVersion.startsWith("1.7.")) {
       jdkVersion = JDK1_7;
     } else if (p_JavaVersion.startsWith("1.6.")) {
       for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
@@ -135,6 +142,14 @@ public class JVM {
   
   public boolean isOneDotSeven() {
       return jdkVersion == JDK1_7;
+  }
+
+  public boolean isOneDotEight() {
+    return jdkVersion == JDK1_8;
+  }
+
+  public boolean isOneDotNine() {
+    return jdkVersion == JDK1_9;
   }
 
 }
