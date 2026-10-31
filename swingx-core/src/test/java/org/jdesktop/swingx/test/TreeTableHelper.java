@@ -15,6 +15,7 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 
+import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
 import org.jdesktop.swingx.treetable.MutableTreeTableNode;
 import org.jdesktop.swingx.treetable.TreeTableModel;
 import org.jdesktop.swingx.treetable.TreeTableNode;
@@ -174,7 +175,7 @@ public class TreeTableHelper {
 //                    = random.nextInt((depth / 2 + 1)
 //                    * Math.round(ROWS / 20f)) + 1; 
                 --i >= 0;)
-                node.insert((MutableTreeNode) createTreeTableNode(depth),
+                node.insert(createTreeTableNode(depth),
                         node.getChildCount());
         return node;
 
@@ -231,8 +232,16 @@ public class TreeTableHelper {
         
 }
 
+    /**
+     * A MutableTreeTableNode holding one value per column.
+     * <p>
+     * Extends DefaultMutableTreeTableNode instead of javax.swing.tree.DefaultMutableTreeNode:
+     * on JDK 9+ DefaultMutableTreeNode.children() returns Enumeration&lt;TreeNode&gt;, which
+     * cannot implement MutableTreeTableNode.children() (Enumeration&lt;? extends
+     * MutableTreeTableNode&gt;), restored in the API (see docs/m3/api-census/API_LOSS.tsv).
+     */
     @SuppressWarnings("serial")
-    public static class Node extends DefaultMutableTreeNode implements MutableTreeTableNode {
+    public static class Node extends DefaultMutableTreeTableNode {
 
         Node(Object[] d) {
             super(d);
@@ -243,18 +252,18 @@ public class TreeTableHelper {
 
         @Override
         public void insert(MutableTreeTableNode child, int index) {
-            super.insert((MutableTreeNode) child, index);
+            super.insert(child, index);
         }
 
         @Override
         public void remove(MutableTreeTableNode node) {
-            super.remove((MutableTreeNode) node);
+            super.remove(node);
 
         }
 
         @Override
         public void setParent(MutableTreeTableNode newParent) {
-            super.setParent((MutableTreeNode) newParent);
+            super.setParent(newParent);
         }
 
         @Override

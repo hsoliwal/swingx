@@ -35,6 +35,7 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -80,6 +81,9 @@ public final class SwingXUtilities {
      * A helper for creating and updating key bindings for components with
      * mnemonics. The {@code pressed} action will be invoked when the mnemonic
      * is activated.
+     * <p>
+     * Components implementing {@link Mnemonicable} are read directly; any other
+     * component must expose a public {@code getMnemonic()} method, read reflectively.
      *
      * @param c
      *            the component bindings to update
@@ -89,7 +93,7 @@ public final class SwingXUtilities {
      * @throws NullPointerException
      *             if the component is {@code null}
      */
-    public static <T extends JComponent & Mnemonicable> void updateMnemonicBinding(T c, String pressed) {
+    public static void updateMnemonicBinding(JComponent c, String pressed) {
         updateMnemonicBinding(c, pressed, null);
     }
     
@@ -98,6 +102,9 @@ public final class SwingXUtilities {
      * mnemonics. The {@code pressed} action will be invoked when the mnemonic
      * is activated and the {@code released} action will be invoked when the
      * mnemonic is deactivated.
+     * <p>
+     * Components implementing {@link Mnemonicable} are read directly; any other
+     * component must expose a public {@code getMnemonic()} method, read reflectively.
      *
      * @param c
      *            the component bindings to update
@@ -111,8 +118,8 @@ public final class SwingXUtilities {
      * @throws NullPointerException
      *             if the component is {@code null}
      */
-    public static <T extends JComponent & Mnemonicable> void updateMnemonicBinding(T c, String pressed, String released) {
-        int m = c.getMnemonic();
+    public static void updateMnemonicBinding(JComponent c, String pressed, String released) {
+        int m = mnemonicOf(c);
 
         InputMap map = SwingUtilities.getUIInputMap(c,
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -136,6 +143,25 @@ public final class SwingXUtilities {
             if (map != null) {
                 map.clear();
             }
+        }
+    }
+    
+    /**
+     * Reads the mnemonic of the given component: directly when it implements
+     * {@link Mnemonicable}, otherwise through its public {@code getMnemonic()} method.
+     */
+    //FLLDCIM: API-UNION - Mnemonicable fast path (franksorensen e77c279) + upstream reflective lookup
+    private static int mnemonicOf(JComponent c) {
+        if (c instanceof Mnemonicable) {
+            return ((Mnemonicable) c).getMnemonic();
+        }
+        try {
+            Method mtd = c.getClass().getMethod("getMnemonic");
+            return (Integer) mtd.invoke(c);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("unable to access mnemonic", e);
         }
     }
     

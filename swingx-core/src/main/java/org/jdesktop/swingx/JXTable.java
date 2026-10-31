@@ -31,6 +31,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 import java.awt.print.PrinterException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -258,6 +259,30 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
  *      null, Color.RED);      
  * </code></pre>
+ * 
+ * <h2>Location of Trigger for ComponentPopupMenu</h2>
+ * 
+ * JXTable allows access to the mouse location that triggered the showing of the
+ * componentPopupMenu. This feature allows to implement dynamic cell-context
+ * sensitive popupMenus, either in the menu actions or in a PopupMenuListener.
+ * <p>
+ * 
+ * The example below selects the cell that was clicked, event being the
+ * <code>PopupMenuEvent</code> received in a  
+ * <code>PopupMenuListener</code>.<p>
+ * 
+ * <pre>
+ * <code>
+ * JXTable table = (JXTable) ((JPopupMenu) e.getSource()).getInvoker();
+ * Point trigger = table.getPopupTriggerLocation();
+ * if (trigger != null) {
+ *     int row = table.rowAtPoint(trigger);
+ *     int column = table.columnAtPoint(trigger);
+ *     table.setRowSelectionInterval(row, row);
+ *     table.setColumnSelectionInterval(column, column);
+ * } 
+ * </code>
+ * </pre>
  * 
  * <h2>Search</h2>
  * 
@@ -512,6 +537,8 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     private transient StringValueRegistry stringValueRegistry;
 
     private SortOrder[] sortOrderCycle;
+
+    private Point popupTriggerLocation;
     
 
     /** Instantiates a JXTable with a default table model, no data. */
@@ -569,8 +596,10 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * @param rowData Row data, as a Vector of Objects.
      * @param columnNames Column names, as a Vector of Strings.
      */
-    public JXTable(Vector<? extends Vector> rowData, Vector<?> columnNames) {
-        super(rowData, columnNames);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public JXTable(Vector<?> rowData, Vector<?> columnNames) {
+        //FLLDCIM: API-UNION - upstream Vector<?> parameter kept; the cast fits the JDK 9+ JTable(Vector<? extends Vector>, Vector<?>)
+        super((Vector<? extends Vector>) rowData, columnNames);
         init();
     }
 
@@ -704,6 +733,52 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
         return new TableRolloverProducer();
     }
 
+//---------------------- enhanced component popup support
+    
+    /**
+     * {@inheritDoc} <p>
+     * 
+     * Overridden for bookkeeping: the given event location is 
+     * stored for later access.
+     * 
+     * @see #getPopupTriggerLocation()
+     */
+    @Override
+    public Point getPopupLocation(MouseEvent event) {
+        updatePopupTrigger(event);
+        return super.getPopupLocation(event);
+    }
+    
+    /**
+     * Handles internal bookkeeping related to popupLocation, called from 
+     * getPopupLocation.<p>
+     * 
+     * This implementation stores the mouse location as popupTriggerLocation.
+     * 
+     * @param event the event that triggered the showing of the 
+     * componentPopup, might be null if triggered by keyboard
+     */
+    protected void updatePopupTrigger(MouseEvent event) {
+        Point old = getPopupTriggerLocation();
+        // note: getPoint creates a new Point on each call, safe to use as-is
+        popupTriggerLocation = event != null ? event.getPoint() : null;
+        firePropertyChange("popupTriggerLocation", old, getPopupTriggerLocation());
+    }
+
+    /**
+     * Returns the location of the mouseEvent that triggered the
+     * showing of the ComponentPopupMenu. 
+     * 
+     * @return the location of the mouseEvent that triggered the
+     * last showing of the ComponentPopup, or null if it was
+     * triggered by keyboard.
+     */
+    public Point getPopupTriggerLocation() {
+        return popupTriggerLocation != null ? new Point(popupTriggerLocation) : null;
+    }
+    
+//------------------- column control
+    
 
     /**
      * Returns the column control visible property.
@@ -2398,6 +2473,35 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
         return null;
     }
 
+    /**
+     * Returns the TableColumn at the given location or null if
+     * the location is outside.
+     * 
+     * @param point the location to return the column for
+     * @return the tableColumn at the location or null
+     * 
+     * @see #getColumnExt(Point)
+     */
+    public TableColumn getColumn(Point p) {
+        int columnIndex = columnAtPoint(p);
+        return columnIndex < 0 ? null : getColumn(columnIndex);
+    }
+    
+    /**
+     * Returns the TableColumnExt at the given location or null if
+     * the location is outside or the column is not of type 
+     * <code>TableColumnExt</code>.
+     * 
+     * @param point the location to return the column for
+     * @return the tableColumnExt at the location or null
+     *     
+     * @see #getColumn(Point)
+     * @see JXTableHeader#getColumnExt(Point)
+     */
+    public TableColumnExt getColumnExt(Point p) {
+        TableColumn column = getColumn(p);
+        return (TableColumnExt) (column instanceof TableColumnExt ? column : null);
+    }
     // ---------------------- enhanced TableColumn/Model support: convenience
 
     /**

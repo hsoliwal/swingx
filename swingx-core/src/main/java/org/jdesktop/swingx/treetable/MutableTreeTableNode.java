@@ -35,6 +35,13 @@ import java.util.Enumeration;
  * @author Karl Schaefer
  */
 public interface MutableTreeTableNode extends TreeTableNode {
+    /**
+     * Returns an enumeration this node's children.
+     * 
+     * @return an enumeration of {@code TreeTableNode}s
+     */
+    @Override
+    Enumeration<? extends MutableTreeTableNode> children();
     
     /**
      * Adds the {@code child} to this node at the specified {@code index}. This
