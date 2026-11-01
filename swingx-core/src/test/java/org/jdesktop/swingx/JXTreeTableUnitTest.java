@@ -251,7 +251,8 @@ public class JXTreeTableUnitTest extends InteractiveTestCase {
      */
     @Test
     public void testExpansionListenerSourceExpanded() {
-        JXTreeTable table = new JXTreeTable(new FileSystemModel());
+        //FLLDCIM: MRL - deterministic model: row 0 of the file system root may be a file (leaf)
+        JXTreeTable table = new JXTreeTable(simpleTreeTableModel);
         TreeExpansionReport report = new TreeExpansionReport(table);
         table.expandRow(0);
         assertEquals(1, report.getEventCount());
@@ -262,7 +263,8 @@ public class JXTreeTableUnitTest extends InteractiveTestCase {
      */
     @Test
     public void testExpansionListenerSourceCollapsed() {
-        JXTreeTable table = new JXTreeTable(new FileSystemModel());
+        //FLLDCIM: MRL - deterministic model: row 0 of the file system root may be a file (leaf)
+        JXTreeTable table = new JXTreeTable(simpleTreeTableModel);
         table.expandRow(0);
         TreeExpansionReport report = new TreeExpansionReport(table);
         table.collapseRow(0);

@@ -38,6 +38,7 @@ import javax.swing.plaf.IconUIResource;
 import junit.framework.TestCase;
 
 import org.jdesktop.swingx.test.XTestUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -567,6 +568,12 @@ public class JXHeaderTest extends TestCase {
     protected void setUp() throws Exception {
         // forcing load of headerAddon
         new JXHeader();
+    }
+
+    //FLLDCIM: MRL - JUnit 4 runner skips TestCase.setUp(); JUnit 4.11+ method order runs the B tests first
+    @Before
+    public void setUpJ4() throws Exception {
+        setUp();
     }
 
 }

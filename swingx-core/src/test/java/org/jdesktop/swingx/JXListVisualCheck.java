@@ -21,7 +21,6 @@ import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
-import javax.swing.DefaultRowSorter;
 import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.JPopupMenu;
@@ -30,7 +29,6 @@ import javax.swing.ListModel;
 import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.RowFilter.Entry;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.PopupMenuEvent;
@@ -47,20 +45,17 @@ import org.jdesktop.swingx.hyperlink.EditorPaneLinkVisitor;
 import org.jdesktop.swingx.hyperlink.LinkModel;
 import org.jdesktop.swingx.hyperlink.LinkModelAction;
 import org.jdesktop.swingx.renderer.DefaultListRenderer;
-import org.jdesktop.swingx.renderer.HyperlinkProvider;
 import org.jdesktop.swingx.renderer.HighlighterClientVisualCheck.FontHighlighter;
+import org.jdesktop.swingx.renderer.HyperlinkProvider;
 import org.jdesktop.swingx.sort.RowFilters;
 import org.jdesktop.test.AncientSwingTeam;
 import org.junit.After;
 import org.junit.Before;
 
-import sun.font.CreatedFontTracker;
-
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class JXListVisualCheck extends InteractiveTestCase { //JXListTest {
     @SuppressWarnings("all")
-    private static final Logger LOG = Logger.getLogger(JXListVisualCheck.class
-            .getName());
+    private static final Logger LOG = Logger.getLogger(JXListVisualCheck.class.getName());
     public static void main(String[] args) {
         setSystemLF(true);
 //        LookAndFeel l;

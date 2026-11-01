@@ -67,7 +67,8 @@ public class DatePickerCellEditorTest extends InteractiveTestCase {
 //        Date fullCycle = editor.getFormats()[0].parse(dateString);
 //        assertEquals("the formatted input date string must be same", fullCycle, editor.getValueAsDate(dateString));
         String nonsenseString = "invalid";
-        assertNull("invalid string maps to null", editor.getValueAsDate(nonsenseString));
+        // expected SEVERE log: Unparseable date: "invalid"
+        assertNull("invalid unparseable string maps to null", editor.getValueAsDate(nonsenseString));
         assertNull("empty String maps to null", editor.getValueAsDate(""));
         // same with date/string wrapped into TreeNode
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(input);

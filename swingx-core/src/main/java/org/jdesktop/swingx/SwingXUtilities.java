@@ -82,11 +82,9 @@ public final class SwingXUtilities {
      * mnemonics. The {@code pressed} action will be invoked when the mnemonic
      * is activated.
      * <p>
-     * TODO establish an interface for the mnemonic properties, such as {@code
-     * MnemonicEnabled} and change signature to {@code public static <T extends
-     * JComponent & MnemonicEnabled> void updateMnemonicBinding(T c, String
-     * pressed)}
-     * 
+     * Components implementing {@link Mnemonicable} are read directly; any other
+     * component must expose a public {@code getMnemonic()} method, read reflectively.
+     *
      * @param c
      *            the component bindings to update
      * @param pressed
@@ -105,11 +103,9 @@ public final class SwingXUtilities {
      * is activated and the {@code released} action will be invoked when the
      * mnemonic is deactivated.
      * <p>
-     * TODO establish an interface for the mnemonic properties, such as {@code
-     * MnemonicEnabled} and change signature to {@code public static <T extends
-     * JComponent & MnemonicEnabled> void updateMnemonicBinding(T c, String
-     * pressed, String released)}
-     * 
+     * Components implementing {@link Mnemonicable} are read directly; any other
+     * component must expose a public {@code getMnemonic()} method, read reflectively.
+     *
      * @param c
      *            the component bindings to update
      * @param pressed
@@ -123,18 +119,8 @@ public final class SwingXUtilities {
      *             if the component is {@code null}
      */
     public static void updateMnemonicBinding(JComponent c, String pressed, String released) {
-        Class<?> clazz = c.getClass();
-        int m = -1;
-        
-        try {
-            Method mtd = clazz.getMethod("getMnemonic");
-            m = (Integer) mtd.invoke(c);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("unable to access mnemonic", e);
-        }
-        
+        int m = mnemonicOf(c);
+
         InputMap map = SwingUtilities.getUIInputMap(c,
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
         
@@ -157,6 +143,25 @@ public final class SwingXUtilities {
             if (map != null) {
                 map.clear();
             }
+        }
+    }
+    
+    /**
+     * Reads the mnemonic of the given component: directly when it implements
+     * {@link Mnemonicable}, otherwise through its public {@code getMnemonic()} method.
+     */
+    //FLLDCIM: API-UNION - Mnemonicable fast path (franksorensen e77c279) + upstream reflective lookup
+    private static int mnemonicOf(JComponent c) {
+        if (c instanceof Mnemonicable) {
+            return ((Mnemonicable) c).getMnemonic();
+        }
+        try {
+            Method mtd = c.getClass().getMethod("getMnemonic");
+            return (Integer) mtd.invoke(c);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("unable to access mnemonic", e);
         }
     }
     
@@ -627,4 +632,19 @@ public final class SwingXUtilities {
         return (i & sourcActions);
     }
 
+    private static final Class<?> appletClass;
+
+    static {
+        Class<?> cls;
+        try {
+            cls = Class.forName("java.applet.Applet");
+        } catch (ClassNotFoundException ex) {
+            cls = null;
+        }
+        appletClass = cls;
+    }
+
+    static boolean isApplet(Component c) {
+        return appletClass != null && appletClass.isInstance(c);
+    }
 }
