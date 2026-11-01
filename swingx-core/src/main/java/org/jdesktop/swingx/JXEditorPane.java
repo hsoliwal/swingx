@@ -679,7 +679,7 @@ public class JXEditorPane extends JEditorPane implements /*Searchable, */Targeta
             Matcher matcher = pattern.matcher(segment.toString());
             MatchResult currentResult = getMatchResult(matcher, !backwards);
             if (currentResult != null) {
-                updateStateAfterFound(currentResult, start);
+                updateStateAfterFound(currentResult, start, pattern);
             } else {
                 updateStateAfterNotFound();
             }
@@ -721,7 +721,7 @@ public class JXEditorPane extends JEditorPane implements /*Searchable, */Targeta
                 // better check pattern?
                 if ((currentResult.start() == 0) && lastMatchResult!=null &&
                    (!lastMatchResult.group().equals(currentResult.group()))) {
-                    updateStateAfterFound(currentResult, start);
+                    updateStateAfterFound(currentResult, start, pattern);
                     return true;
                 } 
             }
@@ -755,6 +755,24 @@ public class JXEditorPane extends JEditorPane implements /*Searchable, */Targeta
                 Matcher lmr = (Matcher) lastMatchResult;
                 lastRegEx = lmr.pattern().pattern();
             }
+            return found;
+        }
+
+        /**
+         * Updates the state after a match of the given pattern. Since JDK 9
+         * {@link Matcher#toMatchResult()} no longer returns a {@code Matcher}: the match
+         * result is kept as is and the searched regex is read from the pattern.
+         *
+         * @param currentResult the match
+         * @param offset the document offset of the searched segment
+         * @param pattern the pattern that produced the match
+         * @return the start position of the selected text
+         */
+        //FLLDCIM: MRL - incremental search state on JDK 9+ (upstream semantics + klst-de JDK 9 guard)
+        private int updateStateAfterFound(MatchResult currentResult, final int offset, Pattern pattern) {
+            int found = updateStateAfterFound(currentResult, offset);
+            lastMatchResult = currentResult;
+            lastRegEx = pattern.pattern();
             return found;
         }
 

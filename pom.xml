@@ -77,6 +77,12 @@
             <include>**/*Test.java</include>
           </includes>
           <forkMode>always</forkMode>
+          <!-- BUILD-GREEN v1 (docs/m3/build-green): the tests were written for JDK 6 locale data. Pin the
+               test JVM so results do not depend on the machine: CLDR, the JDK 9+ default, gives
+               Locale.GERMAN minimalDaysInFirstWeek 1 instead of 4 (CalendarUtilsTest, BasicMonthViewUITest),
+               and JXMonthViewTest needs a zone whose raw offset minus three hours exists (none for
+               Asia/Kolkata). COMPAT exists on JDK 9 to 22. -->
+          <argLine>${swingx.test.argLine}</argLine>
           <!--reportFormat>xml</reportFormat -->
           <!--classesDirectory>${project.build.directory}/emma-classes</classesDirectory -->
         </configuration>
@@ -149,6 +155,7 @@
   <properties>
     <project.generatedSourcesDirectory>${project.build.directory}/generated-sources</project.generatedSourcesDirectory>
     <project.generatedAnnotations>${project.generatedSourcesDirectory}/annotations</project.generatedAnnotations>
+    <swingx.test.argLine>-Djava.locale.providers=COMPAT,CLDR -Duser.timezone=UTC -Duser.language=en -Duser.country=US</swingx.test.argLine>
   </properties>
   <modules>
     <module>swingx-mavensupport</module>
