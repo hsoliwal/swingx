@@ -38,11 +38,10 @@ import java.awt.Window;
 import java.io.IOException;
 import java.net.URI;
 
-import javax.jnlp.BasicService;
-import javax.jnlp.ServiceManager;
-import javax.jnlp.UnavailableServiceException;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+
+import org.jdesktop.swingxset.util.DemoUtils;
 
 /**
  * @author Pavel Porvatov
@@ -115,7 +114,7 @@ public class DemoUtilities {
         toplevel.setLocation(x, y);
     }
 
-    public static boolean browse(URI uri) throws IOException , UnavailableServiceException {
+    public static boolean browse(URI uri) throws IOException {
         // Try using the Desktop api first
         try {
             Desktop desktop = Desktop.getDesktop();
@@ -124,11 +123,9 @@ public class DemoUtilities {
             return true;
         } catch (SecurityException e) {
 //             Running in sandbox, try using WebStart service
-            BasicService basicService =
-                    (BasicService) ServiceManager.lookup("javax.jnlp.BasicService");
-
-            if (basicService.isWebBrowserSupported()) {
-                return basicService.showDocument(uri.toURL());
+            //FLLDCIM: MRL - javax.jnlp.BasicService looked up reflectively: no javaws.jar on JDK 11+
+            if (DemoUtils.showJnlpDocument(uri.toURL())) {
+                return true;
             }
         }
 

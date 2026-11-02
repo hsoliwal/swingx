@@ -22,19 +22,25 @@
 package org.jdesktop.swingx;
 
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.jdesktop.test.matchers.Matchers.property;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.hamcrest.core.Is.isA;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 
+import org.hamcrest.Matcher;
+import org.hamcrest.core.Is;
 import org.jdesktop.test.EDTRunner;
+import org.jdesktop.test.matchers.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 
 /**
  * Unit test for <code>JXCollapsiblePane</code>.
@@ -46,6 +52,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(EDTRunner.class)
 public class JXCollapsiblePaneTest {
+	
+	private static final Logger LOG = Logger.getLogger(JXCollapsiblePaneTest.class.getName());
     /**
      * SWINGX-1412: Ensure that we do not animate when not showing.
      */
@@ -59,8 +67,19 @@ public class JXCollapsiblePaneTest {
         
         pane.setCollapsed(true);
         
-        // this fails if we animate because the property change
+        // argThat fails if we animate because the property change
         // will enqueue on the EDT after this check
-        verify(pcl).propertyChange(argThat(is(property("collapsed", false, true))));
+        
+        Matcher<PropertyChangeEvent> m = Matchers.property("collapsed", false, true);
+        LOG.info("Matcher<PropertyChangeEvent> m:"+m.getClass()+" "+m);
+        // can cast PropertyChangeEventMatcher to org.mockito.ArgumentMatchers:
+        ArgumentMatcher<PropertyChangeEvent> am = (ArgumentMatcher<PropertyChangeEvent>)m;       
+        // but cannot cast Decorator org.hamcrest.core.Is to org.mockito.ArgumentMatchers
+//        Matcher<PropertyChangeEvent> pcem = Is.is(Matchers.property("collapsed", false, true));
+//        LOG.info("Matcher<PropertyChangeEvent> pcem:"+pcem.getClass()+" "+pcem);
+//        ArgumentMatcher<PropertyChangeEvent> fails = (ArgumentMatcher<PropertyChangeEvent>)pcem;
+
+        verify(pcl).propertyChange(argThat( am ));
+                
     }
  }

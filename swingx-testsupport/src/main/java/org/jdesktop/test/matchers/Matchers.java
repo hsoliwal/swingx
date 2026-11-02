@@ -30,6 +30,7 @@ public final class Matchers {
      *         {@code false} otherwise
      */
     public static Matcher<PropertyChangeEvent> propertyWithName(String propertyName) {
+    	// Type mismatch: cannot convert from PropertyChangeEventMatcher to Matcher<PropertyChangeEvent>
         return new PropertyChangeEventMatcher(propertyName, null, null);
     }
 

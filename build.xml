@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE project>
+<project name="SwingX" basedir="." default="ivypublish" 
+						xmlns:mvn="antlib:org.apache.maven.resolver.ant"
+						xmlns:ivy="antlib:org.apache.ivy.ant">
+
+	<property name="package.name" value="swingx-all" />
+	<property name="build.home" value="${basedir}/build" />
+	<property name="dist.home" value="${basedir}/dist" />
+	<property name="lib.home" value="${basedir}/lib" />
+	
+	<target name="ivyresolve" description="">
+		<property file="../ivysetup/ivyproperties.properties" />
+		<ivy:settings file="../ivysetup/ivysettings.xml" />
+		<ivy:resolve file="../maven2ivy/ivy.xml" />
+	</target>
+
+	<target name="ivyretrieve" description="" depends="ivyresolve">
+		<ivy:retrieve sync="true" type="jar,bundle" />
+	</target>
+	
+	<path id="ivyjars">
+		<fileset dir="${lib.home}" >
+			<include name="*.jar" />
+		</fileset>
+	</path>	
+
+	<target name="assemble">
+		<mkdir dir="${build.home}" />
+		<mkdir dir="${dist.home}" />
+
+		<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
+			classpathref="ivyjars" />
+		
+		<echo message="--- getting dependencies from maven pom.xml ---" />
+
+		<mvn:pom file="${basedir}/pom.xml" id="pominfo"></mvn:pom>
+
+		<echo>${pominfo.version}</echo>
+		
+		<unzip dest="${build.home}">
+			<fileset dir="${basedir}">
+				<include name="**/*-${pominfo.version}.jar" />
+			</fileset>
+		</unzip>
+		<delete dir="${build.home}/org/jdesktop/test">
+		</delete>
+		
+		<jar destfile="${dist.home}/${package.name}-${pominfo.version}.jar">
+			<fileset dir="${build.home}"></fileset>
+		</jar>
+		
+        <exec executable="${java.home}/bin/jdeps">
+            <arg value="--generate-module-info"/>
+            <arg value="${dist.home}"/>
+            <arg value="${dist.home}/${package.name}-${pominfo.version}.jar"/>
+        </exec>		
+		
+		<delete dir="${build.home}/META-INF/services"></delete>
+		<delete file="${build.home}/META-INF/MANIFEST.MF"></delete>
+
+        <exec executable="${java.home}/bin/javac">
+            <arg value="-p"/>
+            <arg value="${package.name}"/>
+            <arg value="-d"/>
+            <arg value="${build.home}"/>
+            <arg value="${dist.home}/${package.name}/module-info.java"/>
+        </exec>		
+		
+		<delete file="${dist.home}/${package.name}-${pominfo.version}.jar"></delete>
+		<jar destfile="${dist.home}/${package.name}-${pominfo.version}.jar">
+			<fileset dir="${build.home}"></fileset>
+		</jar>
+		
+	</target>
+
+	
+	<target name="ivypublish" depends="assemble">
+
+		<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
+			classpathref="ivyjars" />
+		
+		<echo message="--- getting dependencies from maven pom.xml ---" />
+
+		<mvn:pom file="${basedir}/pom.xml" id="pominfo"></mvn:pom>
+
+		<echo>${pominfo.version}</echo>
+		
+		<property file="../ivysetup/ivyproperties.properties" />
+		<ivy:settings file="../ivysetup/ivysettings.xml" />
+
+		<ivy:resolve file="${basedir}/ivy.xml" />
+		<ivy:publish pubrevision="${pominfo.version}" status="release" resolver="shared" overwrite="true" >
+			<artifacts pattern="${dist.home}/[artifact]-[revision].[ext]"/>
+		</ivy:publish>	
+	</target>
+	
+	
+</project>

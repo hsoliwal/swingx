@@ -140,7 +140,7 @@ public class SwingXSet extends SingleXFrameApplication  {
         for(int i = 0; i < lafInfo.length; i++) {
             if (lafInfo[i].getName().equals("Nimbus")) {
                 lafInfo[i] = new UIManager.LookAndFeelInfo("Nimbus",
-                        "com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+                		"javax.swing.plaf.nimbus.NimbusLookAndFeel");
                 break;
             }
         }

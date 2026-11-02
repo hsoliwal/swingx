@@ -18,8 +18,8 @@
   		<scope>test</scope>
   	</dependency>
   	<dependency>
-  		<groupId>commons-lang</groupId>
-  		<artifactId>commons-lang</artifactId>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-lang3</artifactId>
   		<type>jar</type>
   		<scope>test</scope>
   	</dependency>
@@ -118,6 +118,16 @@
             </execution>
         </executions>
       </plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <!-- RendererIssues (an *Issues class: compiled, never run by surefire) imports
+               com.sun.java.swing.plaf.motif.MotifLookAndFeel, which java.desktop does not export
+               on JDK 9+. Export that package to the test sources at compile time only. -->
+          <testCompilerArgument>--add-exports=java.desktop/com.sun.java.swing.plaf.motif=ALL-UNNAMED</testCompilerArgument>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
