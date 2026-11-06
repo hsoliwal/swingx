@@ -15,6 +15,9 @@ runs/linux-*.tsv                R8/R9: the same runs of LookAndFeelAddonsSandbox
                                 are the same runs with XDG_CURRENT_DESKTOP=GNOME and GTK 3 (the sandbox test
                                 then passes, the system LAF being GTKLookAndFeel; HyperlinkActionTest fails
                                 the same three tests either way)
+runs/linux-monthview-10x.tsv    R10: BasicMonthViewUITest 10 times each on the superset and on upstream master,
+                                Temurin 17 and 21 (one row per run: tests, failures, errors, skipped, failed
+                                tests); the CI-only failure of testFirstMonthLocation is a CI_ONLY row below
 Every test that failed in any run gets one row; a test absent from a run of its class passed there. A test
 that failed only in the Linux runs takes its run cells from them, prefixed "linux: " ("linux: NOT_RUN" for a
 column without a Linux run).
@@ -32,6 +35,15 @@ SKIPPED = "SKIPPED"
 EXCLUDED = "EXCLUDED_JDK9_PLUS"
 EXCLUDED_NO_SYSTEM_LAF = "EXCLUDED_NO_SYSTEM_LAF"
 EXCLUDED_NO_DESKTOP_ACTION = "EXCLUDED_NO_DESKTOP_ACTION"
+FIXED_TEST = "FIXED_TEST"
+TENFOLD = "runs/linux-monthview-10x.tsv"
+# R10: a failure seen on CI only; its run cells come from here (the Linux 10x runs in TENFOLD all passed)
+CI_ONLY = {
+    "org.jdesktop.swingx.plaf.basic.BasicMonthViewUITest#testFirstMonthLocation": (
+        f"ci: FAILURE no hit - bounds must be null (pull_request run 42158910043, Temurin 17; the push run "
+        f"42158006639 of the same commit passed); linux 10x Temurin 17 and 21: PASS ({TENFOLD})",
+        f"linux 10x Temurin 21: PASS ({TENFOLD})", f"linux 10x Temurin 17: PASS ({TENFOLD})"),
+}
 # R8/R9: Linux run per run column (WSL Ubuntu 24.04 without a GNOME desktop); cells prefixed LINUX
 LINUX_RUNS = {"superset-before-jdk21": "linux-superset-before-jdk21", "upstream-jdk21": "linux-upstream-jdk21",
               "upstream-jdk17": "linux-upstream-jdk17"}
@@ -86,6 +98,9 @@ CAUSES = {
     "org.jdesktop.swingx.hyperlink.HyperlinkActionTest#testURIActionNullMailEnabled": (
         "Linux without a registered mail client: Desktop.isSupported(MAIL) is false, so the MAIL action is "
         "disabled", EXCLUDED_NO_DESKTOP_ACTION, "R9"),
+    "org.jdesktop.swingx.plaf.basic.BasicMonthViewUITest#testFirstMonthLocation": (
+        "getRealizedMonthViewUI() packed, enlarged and showed the frame on the test thread, and the test read "
+        "calendarGrid before the EDT had re-centred it with the 40 px slack (a hit at (19, 20))", FIXED_TEST, "R10"),
 }
 
 
@@ -108,6 +123,8 @@ def linux_cell(linux, run, test):
 
 
 def cells(test, results, linux):
+    if test in CI_ONLY:
+        return CI_ONLY[test]
     if any(test in results[run] for run in RUNS):
         return tuple(results[run].get(test, PASS) for run in RUNS)
     return tuple(linux_cell(linux, run, test) for run in RUNS)
@@ -116,7 +133,7 @@ def cells(test, results, linux):
 def main(directory):
     results = {run: load(directory, run) for run in RUNS}
     linux = {run: load(directory, name) for run, name in LINUX_RUNS.items()}
-    tests = sorted(set().union(*results.values(), *(r for r in linux.values() if r)))
+    tests = sorted(set().union(*results.values(), *(r for r in linux.values() if r), CI_ONLY))
     with open(Path(directory) / "TEST_BASELINE.tsv", "w", encoding="utf-8", newline="\n") as out:
         out.write("\t".join(HEADER) + "\n")
         for test in tests:
