@@ -1,0 +1,2 @@
+label	module	class	method	kind	exception	message
+linux-superset-before-jdk21	swingx-plaf	org.jdesktop.swingx.plaf.LookAndFeelAddonsSandboxTest	testSystemAddon	FAILURE	junit.framework.AssertionFailedError	addon must be system addon, but was: org.jdesktop.swingx.plaf.metal.MetalLookAndFeelAddons@105fece7

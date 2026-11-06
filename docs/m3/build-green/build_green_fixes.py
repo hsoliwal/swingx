@@ -23,6 +23,7 @@ EDITOR = "swingx-core/src/main/java/org/jdesktop/swingx/JXEditorPane.java"
 HEADER_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/JXHeaderTest.java"
 TREETABLE_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/JXTreeTableUnitTest.java"
 BUDDY_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/plaf/BuddyLayoutAndBorderTest.java"
+SANDBOX_TEST = "swingx-plaf/src/test/java/org/jdesktop/swingx/plaf/LookAndFeelAddonsSandboxTest.java"
 
 # R1 surefire: pin the test JVM's locale data, locale and time zone (CI = UTC, en_US)
 POM_FORK = "          <forkMode>always</forkMode>"
@@ -266,6 +267,18 @@ UTILS_JNLP_METHODS = [
     "    }",
     ""]
 
+# R8 LookAndFeelAddonsSandboxTest.testSystemAddon assumes that the system LAF is not the cross-platform LAF.
+# On Linux without a GNOME desktop (XDG_CURRENT_DESKTOP) or GTK the JDK reports Metal for both, and
+# getBestMatchAddonClassName() checks the cross-platform name first, so the Metal addon is the correct answer.
+SANDBOX_IMPORT_ANCHOR = "import java.util.logging.Logger;"
+SANDBOX_IMPORTS = ["import static org.junit.Assume.assumeFalse;", ""]
+SANDBOX_TEST_ANCHOR = "    public void testSystemAddon() {"
+SANDBOX_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the system LAF is not the cross-platform LAF (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a GNOME desktop or GTK reports Metal for both, so the best-match addon is the Metal addon.",
+    "        assumeFalse(\"system LAF is the cross-platform LAF (Linux without GNOME/GTK); see TEST_BASELINE.tsv\",",
+    "                UIManager.getSystemLookAndFeelClassName().equals(UIManager.getCrossPlatformLookAndFeelClassName()));"]
+
 def after(doc, anchor, offset=1):
     return doc.index(anchor) + offset
 
@@ -338,6 +351,13 @@ def fix_demos(repo):
     insert(d, "R7-jnlp-lookup", UTILS_JNLP_METHODS, d.index(UTILS_RESTRICTED_ANCHOR))
     d.save()
 
+
+def fix_sandbox_test(repo):
+    d = Doc(repo, SANDBOX_TEST)
+    insert(d, "R8-import-assumeFalse", SANDBOX_IMPORTS, d.index(SANDBOX_IMPORT_ANCHOR))
+    insert(d, "R8-assume-distinct-system-laf", SANDBOX_ASSUME, after(d, SANDBOX_TEST_ANCHOR))
+    d.save()
+
 if __name__ == "__main__":
     root = sys.argv[1]
     fix_pom(root)
@@ -347,3 +367,4 @@ if __name__ == "__main__":
     fix_treetable_test(root)
     fix_buddy_test(root)
     fix_demos(root)
+    fix_sandbox_test(root)
