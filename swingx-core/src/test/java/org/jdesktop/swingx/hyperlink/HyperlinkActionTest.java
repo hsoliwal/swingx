@@ -4,6 +4,8 @@
  */
 package org.jdesktop.swingx.hyperlink;
 
+import static org.junit.Assume.assumeTrue;
+
 import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
@@ -57,6 +59,11 @@ public class HyperlinkActionTest extends TestCase {
             LOG.fine("cannot run ui test - headless environment");
             return;
         }
+        //FLLDCIM: MRL - premise: the desktop can browse URIs (docs/m3/build-green/TEST_BASELINE.tsv)
+        // Linux without a registered browser answers Desktop.isSupported(BROWSE) false: the action is disabled
+        // and actionPerformed() never visits.
+        assumeTrue("Desktop BROWSE unsupported (Linux without a registered browser); see TEST_BASELINE.tsv",
+                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE));
         URI uri = new URI("http://someserver.de");
         HyperlinkAction action = HyperlinkAction.createHyperlinkAction(uri);
         action.actionPerformed(null);
@@ -70,6 +77,11 @@ public class HyperlinkActionTest extends TestCase {
             LOG.fine("cannot run ui test - headless environment");
             return;
         }
+        //FLLDCIM: MRL - premise: the desktop can mail (docs/m3/build-green/TEST_BASELINE.tsv)
+        // Linux without a registered mail client answers Desktop.isSupported(MAIL) false: the mailto: action
+        // created by the factory is disabled.
+        assumeTrue("Desktop MAIL unsupported (Linux without a registered mail client); see TEST_BASELINE.tsv",
+                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL));
         URI uri = new URI("mailto:java-net@java.sun.com");
         HyperlinkAction action = HyperlinkAction.createHyperlinkAction(uri);
         assertEquals(true, action.isEnabled());
@@ -108,6 +120,11 @@ public class HyperlinkActionTest extends TestCase {
             LOG.fine("cannot run ui test - headless environment");
             return;
         }
+        //FLLDCIM: MRL - premise: the desktop can mail (docs/m3/build-green/TEST_BASELINE.tsv)
+        // Linux without a registered mail client answers Desktop.isSupported(MAIL) false: the MAIL action
+        // without a target is disabled.
+        assumeTrue("Desktop MAIL unsupported (Linux without a registered mail client); see TEST_BASELINE.tsv",
+                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL));
         
         HyperlinkAction action = new HyperlinkAction(Desktop.Action.MAIL);
         assertEquals(true, action.isEnabled());

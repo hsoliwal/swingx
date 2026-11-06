@@ -9,10 +9,12 @@ runs/superset-before-jdk21.tsv  superset head before the recipe (mvn verify, JDK
 runs/upstream-jdk21.tsv         upstream master 9e33bc0 + upstream_baseline.py adaptation (JDK 21)
 runs/upstream-jdk17.tsv         the same on JDK 17
 (written by surefire_failures.py; the upstream runs covered the classes in CLASSES).
-runs/linux-*.tsv                R8: the same runs of LookAndFeelAddonsSandboxTest on Linux without a GNOME
-                                desktop (WSL Ubuntu 24.04, Temurin 21.0.13 and 17.0.21, xvfb); the
-                                runs/linux-*-gnome.tsv files are the same runs with XDG_CURRENT_DESKTOP=GNOME
-                                and GTK 3 (no failures: the system LAF is then GTKLookAndFeel)
+runs/linux-*.tsv                R8/R9: the same runs of LookAndFeelAddonsSandboxTest and HyperlinkActionTest on
+                                Linux without a GNOME desktop (WSL Ubuntu 24.04, Temurin 21.0.13 and 17.0.21,
+                                xvfb, no registered browser or mail client); the runs/linux-*-gnome.tsv files
+                                are the same runs with XDG_CURRENT_DESKTOP=GNOME and GTK 3 (the sandbox test
+                                then passes, the system LAF being GTKLookAndFeel; HyperlinkActionTest fails
+                                the same three tests either way)
 Every test that failed in any run gets one row; a test absent from a run of its class passed there. A test
 that failed only in the Linux runs takes its run cells from them, prefixed "linux: " ("linux: NOT_RUN" for a
 column without a Linux run).
@@ -29,7 +31,8 @@ PASS = "PASS"
 SKIPPED = "SKIPPED"
 EXCLUDED = "EXCLUDED_JDK9_PLUS"
 EXCLUDED_NO_SYSTEM_LAF = "EXCLUDED_NO_SYSTEM_LAF"
-# R8: Linux run per run column (WSL Ubuntu 24.04 without a GNOME desktop); cells prefixed LINUX
+EXCLUDED_NO_DESKTOP_ACTION = "EXCLUDED_NO_DESKTOP_ACTION"
+# R8/R9: Linux run per run column (WSL Ubuntu 24.04 without a GNOME desktop); cells prefixed LINUX
 LINUX_RUNS = {"superset-before-jdk21": "linux-superset-before-jdk21", "upstream-jdk21": "linux-upstream-jdk21",
               "upstream-jdk17": "linux-upstream-jdk17"}
 LINUX = "linux: "
@@ -37,7 +40,9 @@ NOT_RUN = "NOT_RUN"
 # after-jdk21 and after-jdk17 cell per resolution; PASS for every other resolution
 AFTER = {EXCLUDED: SKIPPED,
          EXCLUDED_NO_SYSTEM_LAF: "linux: SKIPPED without a GNOME desktop, PASS with XDG_CURRENT_DESKTOP=GNOME and "
-                                 "GTK 3 (maven.yml); windows: PASS"}
+                                 "GTK 3 (maven.yml); windows: PASS",
+         EXCLUDED_NO_DESKTOP_ACTION: "linux: SKIPPED where Desktop.isSupported(BROWSE or MAIL) is false (WSL: both, "
+                                     "with or without GNOME); windows: PASS"}
 HEADER = ("test",) + RUNS + ("cause", "resolution", "op", "after-jdk21", "after-jdk17")
 # class or class#method -> (cause, resolution, recipe op)
 CAUSES = {
@@ -72,6 +77,15 @@ CAUSES = {
         "LAF, and getBestMatchAddonClassName() checks the cross-platform name first, so the Metal addon is the "
         "correct answer; the test's premise (system LAF distinct from cross-platform) does not hold there",
         EXCLUDED_NO_SYSTEM_LAF, "R8"),
+    "org.jdesktop.swingx.hyperlink.HyperlinkActionTest#testVisited": (
+        "Linux without a registered browser: Desktop.isSupported(BROWSE) is false (OPEN is the only supported "
+        "action), the action is disabled and actionPerformed() never visits", EXCLUDED_NO_DESKTOP_ACTION, "R9"),
+    "org.jdesktop.swingx.hyperlink.HyperlinkActionTest#testURIActionFactoryMail": (
+        "Linux without a registered mail client: Desktop.isSupported(MAIL) is false, so the mailto: action is "
+        "disabled", EXCLUDED_NO_DESKTOP_ACTION, "R9"),
+    "org.jdesktop.swingx.hyperlink.HyperlinkActionTest#testURIActionNullMailEnabled": (
+        "Linux without a registered mail client: Desktop.isSupported(MAIL) is false, so the MAIL action is "
+        "disabled", EXCLUDED_NO_DESKTOP_ACTION, "R9"),
 }
 
 

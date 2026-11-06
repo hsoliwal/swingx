@@ -24,6 +24,7 @@ HEADER_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/JXHeaderTest.java"
 TREETABLE_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/JXTreeTableUnitTest.java"
 BUDDY_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/plaf/BuddyLayoutAndBorderTest.java"
 SANDBOX_TEST = "swingx-plaf/src/test/java/org/jdesktop/swingx/plaf/LookAndFeelAddonsSandboxTest.java"
+HYPERLINK_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/hyperlink/HyperlinkActionTest.java"
 
 # R1 surefire: pin the test JVM's locale data, locale and time zone (CI = UTC, en_US)
 POM_FORK = "          <forkMode>always</forkMode>"
@@ -279,6 +280,35 @@ SANDBOX_ASSUME = [
     "        assumeFalse(\"system LAF is the cross-platform LAF (Linux without GNOME/GTK); see TEST_BASELINE.tsv\",",
     "                UIManager.getSystemLookAndFeelClassName().equals(UIManager.getCrossPlatformLookAndFeelClassName()));"]
 
+# R9 HyperlinkActionTest: three tests assume that the desktop can browse (testVisited) or mail (the two mail
+# tests). On Linux without a registered browser or mail client Desktop.isSupported(BROWSE/MAIL) is false, so the
+# HyperlinkAction is disabled and actionPerformed() never visits; the assumption follows the tests' headless guard.
+HYPERLINK_IMPORT_ANCHOR = "import java.awt.Desktop;"
+HYPERLINK_IMPORTS = ["import static org.junit.Assume.assumeTrue;", ""]
+# the headless guard (comment, if, LOG, return, brace) follows each signature: the assumption goes after it
+HYPERLINK_GUARD_LINES = 6
+HYPERLINK_VISITED_ANCHOR = "    public void testVisited() throws URISyntaxException {"
+HYPERLINK_VISITED_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the desktop can browse URIs (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a registered browser answers Desktop.isSupported(BROWSE) false: the action is disabled",
+    "        // and actionPerformed() never visits.",
+    "        assumeTrue(\"Desktop BROWSE unsupported (Linux without a registered browser); see TEST_BASELINE.tsv\",",
+    "                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE));"]
+HYPERLINK_MAIL_ANCHOR = "    public void testURIActionFactoryMail() throws URISyntaxException {"
+HYPERLINK_MAIL_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the desktop can mail (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a registered mail client answers Desktop.isSupported(MAIL) false: the mailto: action",
+    "        // created by the factory is disabled.",
+    "        assumeTrue(\"Desktop MAIL unsupported (Linux without a registered mail client); see TEST_BASELINE.tsv\",",
+    "                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL));"]
+HYPERLINK_NULL_MAIL_ANCHOR = "    public void testURIActionNullMailEnabled() {"
+HYPERLINK_NULL_MAIL_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the desktop can mail (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a registered mail client answers Desktop.isSupported(MAIL) false: the MAIL action",
+    "        // without a target is disabled.",
+    "        assumeTrue(\"Desktop MAIL unsupported (Linux without a registered mail client); see TEST_BASELINE.tsv\",",
+    "                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL));"]
+
 def after(doc, anchor, offset=1):
     return doc.index(anchor) + offset
 
@@ -358,6 +388,17 @@ def fix_sandbox_test(repo):
     insert(d, "R8-assume-distinct-system-laf", SANDBOX_ASSUME, after(d, SANDBOX_TEST_ANCHOR))
     d.save()
 
+
+def fix_hyperlink_test(repo):
+    d = Doc(repo, HYPERLINK_TEST)
+    insert(d, "R9-import-assumeTrue", HYPERLINK_IMPORTS, d.index(HYPERLINK_IMPORT_ANCHOR))
+    insert(d, "R9-assume-browse-visited", HYPERLINK_VISITED_ASSUME,
+           after(d, HYPERLINK_VISITED_ANCHOR, HYPERLINK_GUARD_LINES))
+    insert(d, "R9-assume-mail-factory", HYPERLINK_MAIL_ASSUME, after(d, HYPERLINK_MAIL_ANCHOR, HYPERLINK_GUARD_LINES))
+    insert(d, "R9-assume-mail-null-target", HYPERLINK_NULL_MAIL_ASSUME,
+           after(d, HYPERLINK_NULL_MAIL_ANCHOR, HYPERLINK_GUARD_LINES))
+    d.save()
+
 if __name__ == "__main__":
     root = sys.argv[1]
     fix_pom(root)
@@ -368,3 +409,4 @@ if __name__ == "__main__":
     fix_buddy_test(root)
     fix_demos(root)
     fix_sandbox_test(root)
+    fix_hyperlink_test(root)
