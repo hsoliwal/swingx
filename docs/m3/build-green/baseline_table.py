@@ -18,6 +18,8 @@ runs/linux-*.tsv                R8/R9: the same runs of LookAndFeelAddonsSandbox
 runs/linux-monthview-10x.tsv    R10: BasicMonthViewUITest 10 times each on the superset and on upstream master,
                                 Temurin 17 and 21 (one row per run: tests, failures, errors, skipped, failed
                                 tests); the CI-only failure of testFirstMonthLocation is a CI_ONLY row below
+runs/linux-rowheight-10x.tsv    R11: the same for TableRowHeightControllerTest, before (superset, upstream) and
+                                after the recipe (superset); the CI-only error is a CI_ONLY row below
 Every test that failed in any run gets one row; a test absent from a run of its class passed there. A test
 that failed only in the Linux runs takes its run cells from them, prefixed "linux: " ("linux: NOT_RUN" for a
 column without a Linux run).
@@ -37,12 +39,18 @@ EXCLUDED_NO_SYSTEM_LAF = "EXCLUDED_NO_SYSTEM_LAF"
 EXCLUDED_NO_DESKTOP_ACTION = "EXCLUDED_NO_DESKTOP_ACTION"
 FIXED_TEST = "FIXED_TEST"
 TENFOLD = "runs/linux-monthview-10x.tsv"
+ROWHEIGHT_TENFOLD = "runs/linux-rowheight-10x.tsv"
 # R10: a failure seen on CI only; its run cells come from here (the Linux 10x runs in TENFOLD all passed)
 CI_ONLY = {
     "org.jdesktop.swingx.plaf.basic.BasicMonthViewUITest#testFirstMonthLocation": (
         f"ci: FAILURE no hit - bounds must be null (pull_request run 42158910043, Temurin 17; the push run "
         f"42158006639 of the same commit passed); linux 10x Temurin 17 and 21: PASS ({TENFOLD})",
         f"linux 10x Temurin 21: PASS ({TENFOLD})", f"linux 10x Temurin 17: PASS ({TENFOLD})"),
+    "org.jdesktop.swingx.table.TableRowHeightControllerTest#testSetModelRewiresModelListeners": (
+        "ci: ERROR InvocationTargetException wrapping assertEquals(smallRowHeight, table.getRowHeight(0)) at line "
+        "228 (push runs 42156150045 and 42173303266, Temurin 17 only; the other jobs and the pull_request runs of "
+        f"the same commits passed); linux 10x Temurin 17 and 21: PASS ({ROWHEIGHT_TENFOLD})",
+        f"linux 10x Temurin 21: PASS ({ROWHEIGHT_TENFOLD})", f"linux 10x Temurin 17: PASS ({ROWHEIGHT_TENFOLD})"),
 }
 # R8/R9: Linux run per run column (WSL Ubuntu 24.04 without a GNOME desktop); cells prefixed LINUX
 LINUX_RUNS = {"superset-before-jdk21": "linux-superset-before-jdk21", "upstream-jdk21": "linux-upstream-jdk21",
@@ -101,6 +109,10 @@ CAUSES = {
     "org.jdesktop.swingx.plaf.basic.BasicMonthViewUITest#testFirstMonthLocation": (
         "getRealizedMonthViewUI() packed, enlarged and showed the frame on the test thread, and the test read "
         "calendarGrid before the EDT had re-centred it with the 40 px slack (a hit at (19, 20))", FIXED_TEST, "R10"),
+    "org.jdesktop.swingx.table.TableRowHeightControllerTest#testSetModelRewiresModelListeners": (
+        "table.setModel() ran on the test thread; JXTable.setModel fires the model property change (the controller "
+        "posts invokeLater(updateModel)) before it replaces the row sorter, so updateModel() could run on the EDT "
+        "while the sorter was in transition and apply no row height", FIXED_TEST, "R11"),
 }
 
 
