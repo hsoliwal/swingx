@@ -23,6 +23,9 @@ EDITOR = "swingx-core/src/main/java/org/jdesktop/swingx/JXEditorPane.java"
 HEADER_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/JXHeaderTest.java"
 TREETABLE_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/JXTreeTableUnitTest.java"
 BUDDY_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/plaf/BuddyLayoutAndBorderTest.java"
+SANDBOX_TEST = "swingx-plaf/src/test/java/org/jdesktop/swingx/plaf/LookAndFeelAddonsSandboxTest.java"
+HYPERLINK_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/hyperlink/HyperlinkActionTest.java"
+MONTHVIEW_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/plaf/basic/BasicMonthViewUITest.java"
 
 # R1 surefire: pin the test JVM's locale data, locale and time zone (CI = UTC, en_US)
 POM_FORK = "          <forkMode>always</forkMode>"
@@ -266,8 +269,120 @@ UTILS_JNLP_METHODS = [
     "    }",
     ""]
 
+# R8 LookAndFeelAddonsSandboxTest.testSystemAddon assumes that the system LAF is not the cross-platform LAF.
+# On Linux without a GNOME desktop (XDG_CURRENT_DESKTOP) or GTK the JDK reports Metal for both, and
+# getBestMatchAddonClassName() checks the cross-platform name first, so the Metal addon is the correct answer.
+SANDBOX_IMPORT_ANCHOR = "import java.util.logging.Logger;"
+SANDBOX_IMPORTS = ["import static org.junit.Assume.assumeFalse;", ""]
+SANDBOX_TEST_ANCHOR = "    public void testSystemAddon() {"
+SANDBOX_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the system LAF is not the cross-platform LAF (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a GNOME desktop or GTK reports Metal for both, so the best-match addon is the Metal addon.",
+    "        assumeFalse(\"system LAF is the cross-platform LAF (Linux without GNOME/GTK); see TEST_BASELINE.tsv\",",
+    "                UIManager.getSystemLookAndFeelClassName().equals(UIManager.getCrossPlatformLookAndFeelClassName()));"]
+
+# R9 HyperlinkActionTest: three tests assume that the desktop can browse (testVisited) or mail (the two mail
+# tests). On Linux without a registered browser or mail client Desktop.isSupported(BROWSE/MAIL) is false, so the
+# HyperlinkAction is disabled and actionPerformed() never visits; the assumption follows the tests' headless guard.
+HYPERLINK_IMPORT_ANCHOR = "import java.awt.Desktop;"
+HYPERLINK_IMPORTS = ["import static org.junit.Assume.assumeTrue;", ""]
+# the headless guard (comment, if, LOG, return, brace) follows each signature: the assumption goes after it
+HYPERLINK_GUARD_LINES = 6
+HYPERLINK_VISITED_ANCHOR = "    public void testVisited() throws URISyntaxException {"
+HYPERLINK_VISITED_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the desktop can browse URIs (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a registered browser answers Desktop.isSupported(BROWSE) false: the action is disabled",
+    "        // and actionPerformed() never visits.",
+    "        assumeTrue(\"Desktop BROWSE unsupported (Linux without a registered browser); see TEST_BASELINE.tsv\",",
+    "                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE));"]
+HYPERLINK_MAIL_ANCHOR = "    public void testURIActionFactoryMail() throws URISyntaxException {"
+HYPERLINK_MAIL_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the desktop can mail (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a registered mail client answers Desktop.isSupported(MAIL) false: the mailto: action",
+    "        // created by the factory is disabled.",
+    "        assumeTrue(\"Desktop MAIL unsupported (Linux without a registered mail client); see TEST_BASELINE.tsv\",",
+    "                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL));"]
+HYPERLINK_NULL_MAIL_ANCHOR = "    public void testURIActionNullMailEnabled() {"
+HYPERLINK_NULL_MAIL_ASSUME = [
+    "        //FLLDCIM: MRL - premise: the desktop can mail (docs/m3/build-green/TEST_BASELINE.tsv)",
+    "        // Linux without a registered mail client answers Desktop.isSupported(MAIL) false: the MAIL action",
+    "        // without a target is disabled.",
+    "        assumeTrue(\"Desktop MAIL unsupported (Linux without a registered mail client); see TEST_BASELINE.tsv\",",
+    "                Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL));"]
+
+# R10 BasicMonthViewUITest: getRealizedMonthViewUI() packed, enlarged and showed the frame on the test thread, and
+# the tests then read the layout (calendarGrid) that BasicMonthViewUI.layoutContainer writes on the EDT.
+# testFirstMonthLocation hit (19, 20) once on CI (pull_request run 42158910043, Temurin 17) while the push run of
+# the same commit passed: the grid had not been re-centred with the 40 px slack when the test thread read it.
+# The frame is now realized on the EDT and the test thread reads the layout only after invokeAndWait returned.
+MONTHVIEW_ONE_ARG_ANCHOR = "    private BasicMonthViewUI getRealizedMonthViewUI(ComponentOrientation co) {"
+# the one-argument overload is signature, return, closing brace: the helper follows it
+MONTHVIEW_ONE_ARG_LINES = 3
+MONTHVIEW_REALIZE_HELPER = [
+    "",
+    "    /**",
+    "     * Runs the given frame realization on the EDT and returns when it is done (runs it",
+    "     * directly when already on the EDT), so that the caller reads a completed layout.",
+    "     *",
+    "     * @param realize the frame creation, packing and showing",
+    "     */",
+    "    //FLLDCIM: MRL - atom: realize on the EDT, read the layout after invokeAndWait (BUILD-GREEN R10)",
+    "    private static void realizeOnEDT(Runnable realize) {",
+    "        if (SwingUtilities.isEventDispatchThread()) {",
+    "            realize.run();",
+    "            return;",
+    "        }",
+    "        try {",
+    "            SwingUtilities.invokeAndWait(realize);",
+    "        } catch (Exception e) {",
+    "            throw new IllegalStateException(\"cannot realize the frame on the EDT\", e);",
+    "        }",
+    "    }"]
+MONTHVIEW_TWO_ARG_ANCHOR = "    private BasicMonthViewUI getRealizedMonthViewUI(ComponentOrientation co,"
+# the two-argument signature spans two lines; the body starts after them
+MONTHVIEW_BODY_OFFSET = 2
+MONTHVIEW_CONFIG = [
+    "        monthView.setPreferredColumnCount(2);",
+    "        monthView.setPreferredRowCount(2);",
+    "        monthView.setComponentOrientation(co);",
+    "        monthView.setShowingWeekNumber(isShowingWeekNumbers);",
+    "        Calendar calendar = monthView.getCalendar();",
+    "        calendar.set(2008, Calendar.FEBRUARY, 20);",
+    "        monthView.setFirstDisplayedDay(calendar.getTime());"]
+MONTHVIEW_BODY_OLD = ["        JXMonthView monthView = new JXMonthView();"] + MONTHVIEW_CONFIG + [
+    "        JXFrame frame = new JXFrame();",
+    "        frame.add(monthView);",
+    "        frame.pack();",
+    "        frame.setSize(frame.getWidth() + 40, frame.getHeight() + 40);",
+    "        frame.setVisible(true);"]
+MONTHVIEW_BODY_NEW = ["        final JXMonthView monthView = new JXMonthView();"] + MONTHVIEW_CONFIG + [
+    "        //FLLDCIM: MRL - realized on the EDT: the tests read calendarGrid, which layoutContainer writes on the EDT",
+    "        // (docs/m3/build-green/TEST_BASELINE.tsv, testFirstMonthLocation)",
+    "        realizeOnEDT(new Runnable() {",
+    "            @Override",
+    "            public void run() {",
+    "                JXFrame frame = new JXFrame();",
+    "                frame.add(monthView);",
+    "                frame.pack();",
+    "                frame.setSize(frame.getWidth() + 40, frame.getHeight() + 40);",
+    "                frame.setVisible(true);",
+    "            }",
+    "        });"]
+
 def after(doc, anchor, offset=1):
     return doc.index(anchor) + offset
+
+
+def replace_after(doc, op, anchor, offset, old, new):
+    """Replaces the block old, expected offset lines after the unique anchor, by new (ALREADY when present)."""
+    at = after(doc, anchor, offset)
+    if doc.lines[at:at + len(new)] == new:
+        print(f"{op}\t{doc.path}\tALREADY\t{len(new)} lines")
+        return
+    if doc.lines[at:at + len(old)] != old:
+        raise SystemExit(f"FAIL\t{doc.path}\t{op}: old block not found after {anchor.strip()!r}")
+    doc.lines[at:at + len(old)] = new
+    print(f"{op}\t{doc.path}\tAPPLIED\t-{len(old)} +{len(new)} lines at {at + 1}")
 
 
 def fix_pom(repo):
@@ -338,6 +453,33 @@ def fix_demos(repo):
     insert(d, "R7-jnlp-lookup", UTILS_JNLP_METHODS, d.index(UTILS_RESTRICTED_ANCHOR))
     d.save()
 
+
+def fix_sandbox_test(repo):
+    d = Doc(repo, SANDBOX_TEST)
+    insert(d, "R8-import-assumeFalse", SANDBOX_IMPORTS, d.index(SANDBOX_IMPORT_ANCHOR))
+    insert(d, "R8-assume-distinct-system-laf", SANDBOX_ASSUME, after(d, SANDBOX_TEST_ANCHOR))
+    d.save()
+
+
+def fix_hyperlink_test(repo):
+    d = Doc(repo, HYPERLINK_TEST)
+    insert(d, "R9-import-assumeTrue", HYPERLINK_IMPORTS, d.index(HYPERLINK_IMPORT_ANCHOR))
+    insert(d, "R9-assume-browse-visited", HYPERLINK_VISITED_ASSUME,
+           after(d, HYPERLINK_VISITED_ANCHOR, HYPERLINK_GUARD_LINES))
+    insert(d, "R9-assume-mail-factory", HYPERLINK_MAIL_ASSUME, after(d, HYPERLINK_MAIL_ANCHOR, HYPERLINK_GUARD_LINES))
+    insert(d, "R9-assume-mail-null-target", HYPERLINK_NULL_MAIL_ASSUME,
+           after(d, HYPERLINK_NULL_MAIL_ANCHOR, HYPERLINK_GUARD_LINES))
+    d.save()
+
+
+def fix_monthview_test(repo):
+    d = Doc(repo, MONTHVIEW_TEST)
+    insert(d, "R10-realize-on-edt-helper", MONTHVIEW_REALIZE_HELPER,
+           after(d, MONTHVIEW_ONE_ARG_ANCHOR, MONTHVIEW_ONE_ARG_LINES))
+    replace_after(d, "R10-realize-on-edt", MONTHVIEW_TWO_ARG_ANCHOR, MONTHVIEW_BODY_OFFSET,
+                  MONTHVIEW_BODY_OLD, MONTHVIEW_BODY_NEW)
+    d.save()
+
 if __name__ == "__main__":
     root = sys.argv[1]
     fix_pom(root)
@@ -347,3 +489,6 @@ if __name__ == "__main__":
     fix_treetable_test(root)
     fix_buddy_test(root)
     fix_demos(root)
+    fix_sandbox_test(root)
+    fix_hyperlink_test(root)
+    fix_monthview_test(root)

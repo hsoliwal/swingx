@@ -4,6 +4,9 @@
 # CI build of the SwingX superset: mvn -B -ntp verify (compile, tests, packaging) on Temurin 11, 17 and 21.
 # Swing tests create windows, so Maven runs under xvfb-run. The test JVM's locale data, locale and time
 # zone are pinned in pom.xml (swingx.test.argLine, docs/m3/build-green).
+# GTK 3 plus XDG_CURRENT_DESKTOP=GNOME give the JDK a real system look and feel (GTKLookAndFeel instead of
+# Metal, the cross-platform one), so LookAndFeelAddonsSandboxTest.testSystemAddon runs on Linux instead of
+# being skipped (R8 in docs/m3/build-green). The probe step prints what the JDK answers.
 
 name: Maven CI
 
@@ -31,5 +34,26 @@ jobs:
         cache: maven
     - name: Ensure xvfb
       run: command -v xvfb-run || (sudo apt-get update && sudo apt-get install -y xvfb)
+    - name: Ensure GTK 3 (system look and feel)
+      run: |
+        ldconfig -p | grep -q 'libgtk-3\.so\.0' || (sudo apt-get update && (sudo apt-get install -y libgtk-3-0t64 || sudo apt-get install -y libgtk-3-0))
+        ldconfig -p | grep 'libgtk-3\.so\.0'
+    - name: Report the system look and feel
+      env:
+        XDG_CURRENT_DESKTOP: GNOME
+      run: |
+        cat > "$RUNNER_TEMP/SystemLaf.java" <<'EOF'
+        public class SystemLaf {
+            public static void main(String[] args) {
+                System.out.println("XDG_CURRENT_DESKTOP=" + System.getenv("XDG_CURRENT_DESKTOP")
+                        + " system LAF=" + javax.swing.UIManager.getSystemLookAndFeelClassName());
+            }
+        }
+        EOF
+        xvfb-run -a java "$RUNNER_TEMP/SystemLaf.java"
     - name: Build and test with Maven
+      env:
+        # JDK 11, 17 and 21 (sun.awt.UNIXToolkit.getDesktop) report the GNOME desktop when XDG_CURRENT_DESKTOP
+        # contains "gnome"; with GTK loadable, UIManager.getSystemLookAndFeelClassName() is then GTKLookAndFeel.
+        XDG_CURRENT_DESKTOP: GNOME
       run: xvfb-run -a mvn -B -ntp verify

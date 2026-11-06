@@ -1366,6 +1366,25 @@ public class BasicMonthViewUITest extends InteractiveTestCase {
     }
 
     /**
+     * Runs the given frame realization on the EDT and returns when it is done (runs it
+     * directly when already on the EDT), so that the caller reads a completed layout.
+     *
+     * @param realize the frame creation, packing and showing
+     */
+    //FLLDCIM: MRL - atom: realize on the EDT, read the layout after invokeAndWait (BUILD-GREEN R10)
+    private static void realizeOnEDT(Runnable realize) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            realize.run();
+            return;
+        }
+        try {
+            SwingUtilities.invokeAndWait(realize);
+        } catch (Exception e) {
+            throw new IllegalStateException("cannot realize the frame on the EDT", e);
+        }
+    }
+
+    /**
      * Returns the ui of a realized JXMonthView with
      * given componentOrientation and showingWeekNumbers flag.
      * It's prefColumns/Rows are set to 2. The first displayedDate is 
@@ -1381,7 +1400,7 @@ public class BasicMonthViewUITest extends InteractiveTestCase {
      */
     private BasicMonthViewUI getRealizedMonthViewUI(ComponentOrientation co,
             boolean isShowingWeekNumbers) {
-        JXMonthView monthView = new JXMonthView();
+        final JXMonthView monthView = new JXMonthView();
         monthView.setPreferredColumnCount(2);
         monthView.setPreferredRowCount(2);
         monthView.setComponentOrientation(co);
@@ -1389,11 +1408,18 @@ public class BasicMonthViewUITest extends InteractiveTestCase {
         Calendar calendar = monthView.getCalendar();
         calendar.set(2008, Calendar.FEBRUARY, 20);
         monthView.setFirstDisplayedDay(calendar.getTime());
-        JXFrame frame = new JXFrame();
-        frame.add(monthView);
-        frame.pack();
-        frame.setSize(frame.getWidth() + 40, frame.getHeight() + 40);
-        frame.setVisible(true);
+        //FLLDCIM: MRL - realized on the EDT: the tests read calendarGrid, which layoutContainer writes on the EDT
+        // (docs/m3/build-green/TEST_BASELINE.tsv, testFirstMonthLocation)
+        realizeOnEDT(new Runnable() {
+            @Override
+            public void run() {
+                JXFrame frame = new JXFrame();
+                frame.add(monthView);
+                frame.pack();
+                frame.setSize(frame.getWidth() + 40, frame.getHeight() + 40);
+                frame.setVisible(true);
+            }
+        });
         BasicMonthViewUI ui = (BasicMonthViewUI) monthView.getUI();
         return ui;
     }

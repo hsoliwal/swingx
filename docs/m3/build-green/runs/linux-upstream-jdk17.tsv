@@ -1,0 +1,5 @@
+label	module	class	method	kind	exception	message
+linux-upstream-jdk17	swingx-core	org.jdesktop.swingx.hyperlink.HyperlinkActionTest	testVisited	FAILURE	junit.framework.AssertionFailedError	expected:<true> but was:<false>
+linux-upstream-jdk17	swingx-core	org.jdesktop.swingx.hyperlink.HyperlinkActionTest	testURIActionFactoryMail	FAILURE	junit.framework.AssertionFailedError	expected:<true> but was:<false>
+linux-upstream-jdk17	swingx-core	org.jdesktop.swingx.hyperlink.HyperlinkActionTest	testURIActionNullMailEnabled	FAILURE	junit.framework.AssertionFailedError	expected:<true> but was:<false>
+linux-upstream-jdk17	swingx-plaf	org.jdesktop.swingx.plaf.LookAndFeelAddonsSandboxTest	testSystemAddon	FAILURE	junit.framework.AssertionFailedError	addon must be system addon, but was: org.jdesktop.swingx.plaf.metal.MetalLookAndFeelAddons@553a3d88
