@@ -26,6 +26,7 @@ BUDDY_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/plaf/BuddyLayoutAndB
 SANDBOX_TEST = "swingx-plaf/src/test/java/org/jdesktop/swingx/plaf/LookAndFeelAddonsSandboxTest.java"
 HYPERLINK_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/hyperlink/HyperlinkActionTest.java"
 MONTHVIEW_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/plaf/basic/BasicMonthViewUITest.java"
+ROWHEIGHT_TEST = "swingx-core/src/test/java/org/jdesktop/swingx/table/TableRowHeightControllerTest.java"
 
 # R1 surefire: pin the test JVM's locale data, locale and time zone (CI = UTC, en_US)
 POM_FORK = "          <forkMode>always</forkMode>"
@@ -369,6 +370,32 @@ MONTHVIEW_BODY_NEW = ["        final JXMonthView monthView = new JXMonthView();"
     "            }",
     "        });"]
 
+# R11 TableRowHeightControllerTest: testSetModelRewiresModelListeners called table.setModel() on the test thread.
+# JTable.setModel fires the "model" property change (the controller posts invokeLater(updateModel)) before it
+# replaces the row sorter, so updateModel() could run on the EDT while the test thread was still inside setModel:
+# getRowCount()/convertRowIndexToView() then see a sorter in transition, no row height is applied and
+# assertEquals(smallRowHeight, table.getRowHeight(0)) fails (CI runs 42156150045 and 42173303266, Temurin 17).
+# The model mutations of the tests now run inside invokeAndWait, so the posted update runs after they completed.
+ROWHEIGHT_SETMODEL_OLD = ["        table.setModel(model);"]
+ROWHEIGHT_SETMODEL_NEW = [
+    "        //FLLDCIM: MRL - setModel on the EDT: the controller's invokeLater(updateModel) then runs after setModel",
+    "        // completed instead of concurrently with the test thread still replacing the row sorter (BUILD-GREEN R11)",
+    "        SwingUtilities.invokeAndWait(new Runnable() {",
+    "            @Override",
+    "            public void run() {",
+    "                table.setModel(model);",
+    "            }",
+    "        });"]
+ROWHEIGHT_SETVALUE_OLD = ["        table.setValueAt(table.getValueAt(0, 0), 1, 0);"]
+ROWHEIGHT_SETVALUE_NEW = [
+    "        //FLLDCIM: MRL - the model update on the EDT, like the insert test above (BUILD-GREEN R11)",
+    "        SwingUtilities.invokeAndWait(new Runnable() {",
+    "            @Override",
+    "            public void run() {",
+    "                table.setValueAt(table.getValueAt(0, 0), 1, 0);",
+    "            }",
+    "        });"]
+
 def after(doc, anchor, offset=1):
     return doc.index(anchor) + offset
 
@@ -480,6 +507,13 @@ def fix_monthview_test(repo):
                   MONTHVIEW_BODY_OLD, MONTHVIEW_BODY_NEW)
     d.save()
 
+
+def fix_rowheight_test(repo):
+    d = Doc(repo, ROWHEIGHT_TEST)
+    replace(d, "R11-setmodel-on-edt", ROWHEIGHT_SETMODEL_OLD, ROWHEIGHT_SETMODEL_NEW)
+    replace(d, "R11-setvalue-on-edt", ROWHEIGHT_SETVALUE_OLD, ROWHEIGHT_SETVALUE_NEW)
+    d.save()
+
 if __name__ == "__main__":
     root = sys.argv[1]
     fix_pom(root)
@@ -492,3 +526,4 @@ if __name__ == "__main__":
     fix_sandbox_test(root)
     fix_hyperlink_test(root)
     fix_monthview_test(root)
+    fix_rowheight_test(root)

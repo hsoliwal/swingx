@@ -218,7 +218,14 @@ public class TableRowHeightControllerTest extends InteractiveTestCase {
         final AbstractTableModel oldModel = (AbstractTableModel) table.getModel();
         assertEquals("sanity: model listener installed", true, containsModelListener(oldModel));
         final DefaultTableModel model = createTableModel(true);
-        table.setModel(model);
+        //FLLDCIM: MRL - setModel on the EDT: the controller's invokeLater(updateModel) then runs after setModel
+        // completed instead of concurrently with the test thread still replacing the row sorter (BUILD-GREEN R11)
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                table.setModel(model);
+            }
+        });
         
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -264,7 +271,13 @@ public class TableRowHeightControllerTest extends InteractiveTestCase {
     @Test
     public void testRowHeightAdjustedOnUpdate() throws InterruptedException, InvocationTargetException {
         final int smallRowHeight = table.getRowHeight(0);
-        table.setValueAt(table.getValueAt(0, 0), 1, 0);
+        //FLLDCIM: MRL - the model update on the EDT, like the insert test above (BUILD-GREEN R11)
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                table.setValueAt(table.getValueAt(0, 0), 1, 0);
+            }
+        });
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
