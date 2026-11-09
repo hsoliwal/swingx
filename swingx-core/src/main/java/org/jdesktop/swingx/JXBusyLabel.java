@@ -22,11 +22,16 @@
 package org.jdesktop.swingx;
 
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.WindowStateListener;
 
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.plaf.LabelUI;
 
@@ -103,6 +108,14 @@ public class JXBusyLabel extends JLabel {
     private int delay;
     /** Status flag to save/restore status of timer when moving component between containers. */
     private boolean wasBusyOnNotify = false;
+    /**
+     * True while the animation waits because nobody can see the label (it or an ancestor hidden, or its frame
+     * iconified): the timer is stopped, {@link #isBusy()} stays true, and showing again restarts it.
+     */
+    private boolean parked;
+    /** The iconified frame a parked animation waits for, and its de-iconify listener. */
+    private transient Window parkedWindow;
+    private transient WindowStateListener deiconify;
     
     /**
      * UI Class ID
@@ -126,6 +139,15 @@ public class JXBusyLabel extends JLabel {
      */
     static {
         LookAndFeelAddons.contribute(new BusyLabelAddon());
+    }
+
+    {
+        // a parked animation restarts when the label is showing again //FLLDCIM: MARK — every-widget JXBusyLabel H
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+                resumeAnimation();
+            }
+        });
     }
 
     {
@@ -238,6 +260,9 @@ public class JXBusyLabel extends JLabel {
             int frame = busyPainter.getPoints();
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (parkIfHidden()) {
+                    return;
+                }
                 frame = (frame+1)%busyPainter.getPoints();
                 busyPainter.setFrame(direction == BusyPainter.Direction.LEFT ? busyPainter.getPoints() - frame : frame);
                 frameChanged();
@@ -249,7 +274,49 @@ public class JXBusyLabel extends JLabel {
     
     
     
+    /*
+     * A frame tick that finds the label unseen stops the timer instead of painting a frame nobody sees (rule 24).
+     */
+    private boolean parkIfHidden() {
+        Window window = SwingUtilities.getWindowAncestor(this);
+        boolean iconified = iconified(window);
+        if (isShowing() && !iconified) {
+            return false;
+        }
+        busy.stop(); //FLLDCIM: MARK — every-widget JXBusyLabel H
+        parked = true;
+        if (iconified && parkedWindow != window) {
+            unwatchWindow();
+            parkedWindow = window;
+            deiconify = e -> resumeAnimation();
+            window.addWindowStateListener(deiconify);
+        }
+        return true;
+    }
+
+    private void resumeAnimation() {
+        if (parked && busy != null && isShowing() && !iconified(SwingUtilities.getWindowAncestor(this))) {
+            parked = false;
+            unwatchWindow();
+            busy.start();
+        }
+    }
+
+    private static boolean iconified(Window window) {
+        return window instanceof Frame && (((Frame) window).getExtendedState() & Frame.ICONIFIED) != 0;
+    }
+
+    private void unwatchWindow() {
+        if (parkedWindow != null) {
+            parkedWindow.removeWindowStateListener(deiconify);
+            parkedWindow = null;
+            deiconify = null;
+        }
+    }
+
     private void stopAnimation() {
+        parked = false;
+        unwatchWindow();
         if (busy != null) {
             busy.stop();
             getBusyPainter().setFrame(-1);
