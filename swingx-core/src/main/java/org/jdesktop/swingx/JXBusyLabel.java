@@ -23,6 +23,7 @@ package org.jdesktop.swingx;
 
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -30,6 +31,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.WindowStateListener;
 
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -345,7 +347,20 @@ public class JXBusyLabel extends JLabel {
     }
 
     protected void frameChanged() {
-        repaint();
+        // only the busy icon changes between frames: repaint its bounds, not the text //FLLDCIM: MARK — every-widget SwingX JXBusyLabel D
+        Icon icon = getIcon();
+        if (icon == null || getWidth() <= 0 || getHeight() <= 0) {
+            repaint();
+            return;
+        }
+        Insets insets = getInsets();
+        Rectangle view = new Rectangle(insets.left, insets.top, getWidth() - insets.left - insets.right,
+                getHeight() - insets.top - insets.bottom);
+        Rectangle iconBounds = new Rectangle();
+        SwingUtilities.layoutCompoundLabel(this, getFontMetrics(getFont()), getText(), icon,
+                getVerticalAlignment(), getHorizontalAlignment(), getVerticalTextPosition(),
+                getHorizontalTextPosition(), view, iconBounds, new Rectangle(), getIconTextGap());
+        repaint(iconBounds);
     }
 
     /**
