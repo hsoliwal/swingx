@@ -851,6 +851,10 @@ public class JXCollapsiblePane extends JXPanel {
             * Revalidate/Repaint the content container
             */
             synchronized (ANIMATION_MUTEX) {
+                if (startDimension != finalDimension && !isShowing()) {
+                    // hidden mid-slide: no frames nobody sees, the pane takes its target at once (rule 24)
+                    startDimension = finalDimension; //FLLDCIM: MARK — every-widget JXCollapsiblePane H
+                }
                 if (startDimension == finalDimension) {
                     animateTimer.stop();
                     animateAlpha = animationParams.alphaEnd;
