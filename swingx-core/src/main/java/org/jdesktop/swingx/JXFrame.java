@@ -93,6 +93,9 @@ public class JXFrame extends JFrame {
     private AWTEventListener idleListener; //for listening to events. If no events happen for a specific amount of time, mark as idle
     private Timer idleTimer;
     private long idleThreshold = 0;
+    /** The input events that end the idle state. */
+    private static final long IDLE_EVENT_MASK = AWTEvent.KEY_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK
+            | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.MOUSE_WHEEL_EVENT_MASK;
     private boolean idle;
     
     /**
@@ -235,6 +238,43 @@ public class JXFrame extends JFrame {
                 idleTimer.restart();
             }
         };
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Registers the key preview and idle listeners with the toolkit again, for a frame shown after a
+     * {@link #dispose()}.
+     */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        // the toolkit listeners live while the frame is displayable //FLLDCIM: MARK — every-widget JXFrame toolkit listeners while displayable
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        toolkit.removeAWTEventListener(keyEventListener);
+        if (keyPreview) {
+            toolkit.addAWTEventListener(keyEventListener, AWTEvent.KEY_EVENT_MASK);
+        }
+        toolkit.removeAWTEventListener(idleListener);
+        if (getIdleThreshold() > 0) {
+            toolkit.addAWTEventListener(idleListener, IDLE_EVENT_MASK);
+            idleTimer.restart();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Removes the key preview and idle listeners from the toolkit and stops the idle timer: the toolkit would
+     * otherwise keep a disposed frame and run its key listeners and idle timer for the other windows.
+     */
+    @Override
+    public void removeNotify() {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        toolkit.removeAWTEventListener(keyEventListener);
+        toolkit.removeAWTEventListener(idleListener);
+        idleTimer.stop();
+        super.removeNotify();
     }
 
     /**
@@ -543,7 +583,7 @@ public class JXFrame extends JFrame {
         
         Toolkit.getDefaultToolkit().removeAWTEventListener(idleListener);
         if (threshold > 0) {
-            Toolkit.getDefaultToolkit().addAWTEventListener(idleListener, AWTEvent.KEY_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.MOUSE_WHEEL_EVENT_MASK);
+            Toolkit.getDefaultToolkit().addAWTEventListener(idleListener, IDLE_EVENT_MASK);
         }
         idleTimer.stop();
         idleTimer.setInitialDelay((int)threshold);
