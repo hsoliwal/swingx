@@ -1,4 +1,0 @@
-label	module	class	method	kind	exception	message
-linux-upstream-jdk17-gnome	swingx-core	org.jdesktop.swingx.hyperlink.HyperlinkActionTest	testVisited	FAILURE	junit.framework.AssertionFailedError	expected:<true> but was:<false>
-linux-upstream-jdk17-gnome	swingx-core	org.jdesktop.swingx.hyperlink.HyperlinkActionTest	testURIActionFactoryMail	FAILURE	junit.framework.AssertionFailedError	expected:<true> but was:<false>
-linux-upstream-jdk17-gnome	swingx-core	org.jdesktop.swingx.hyperlink.HyperlinkActionTest	testURIActionNullMailEnabled	FAILURE	junit.framework.AssertionFailedError	expected:<true> but was:<false>
