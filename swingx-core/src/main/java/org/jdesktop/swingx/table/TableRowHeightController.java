@@ -45,6 +45,10 @@ import javax.swing.table.TableModel;
 public class TableRowHeightController {
 
     private JTable table;
+    // Model changes are deferred, so the subscription can lag table.getModel().
+    private TableModel listeningModel;
+    // A reinstall on the same table must not inherit its previous queued work.
+    private long installation;
     private TableModelListener tableModelListener;
     private PropertyChangeListener tablePropertyListener;
 
@@ -86,6 +90,7 @@ public class TableRowHeightController {
     public void release() {
         if (table == null)
             return;
+        installation++;
         uninstallListeners();
         table = null;
     }
@@ -120,10 +125,17 @@ public class TableRowHeightController {
      * @param oldValue
      */
     protected void updateModel(TableModel oldValue) {
-        if (oldValue != null) {
+        if (oldValue != null && oldValue != listeningModel) {
             oldValue.removeTableModelListener(getTableModelListener());
         }
-        table.getModel().addTableModelListener(getTableModelListener());
+        TableModel currentModel = table.getModel();
+        if (listeningModel != currentModel) {
+            if (listeningModel != null) {
+                listeningModel.removeTableModelListener(getTableModelListener());
+            }
+            listeningModel = currentModel;
+            listeningModel.addTableModelListener(getTableModelListener());
+        }
         updatePreferredRowHeights();
     }
 
@@ -143,13 +155,20 @@ public class TableRowHeightController {
              * @param evt
              */
             private void invokedPropertyChanged(final PropertyChangeEvent evt) {
+                if (!"model".equals(evt.getPropertyName())) {
+                    return;
+                }
+                final JTable installedTable = table;
+                final long currentInstallation = installation;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        if ("model".equals(evt.getPropertyName())) {
-                            updateModel((TableModel) evt.getOldValue());
+                        if (table == null || table != installedTable
+                                || installation != currentInstallation
+                                || evt.getSource() != installedTable) {
+                            return;
                         }
-                        
+                        updateModel((TableModel) evt.getOldValue());
                     }
                 });
             }
@@ -161,9 +180,16 @@ public class TableRowHeightController {
         TableModelListener l = new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
+                final JTable installedTable = table;
+                final long currentInstallation = installation;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
+                        if (table == null || table != installedTable
+                                || installation != currentInstallation
+                                || (e != null && e.getSource() != table.getModel())) {
+                            return;
+                        }
                         invokedTableChanged(e);
                     }
                 });
@@ -173,7 +199,10 @@ public class TableRowHeightController {
                 if (isStructureChanged(e) || isDataChanged(e)) {
                     updatePreferredRowHeights();
                 } else  if (isUpdate(e) || isInsert(e)) {
-                    updatePreferredRowHeights(e.getFirstRow(), e.getLastRow());
+                    int lastRow = Math.min(e.getLastRow(), table.getModel().getRowCount() - 1);
+                    if (e.getFirstRow() <= lastRow) {
+                        updatePreferredRowHeights(e.getFirstRow(), lastRow);
+                    }
                 } 
                 // do nothing on delete
             }
@@ -185,13 +214,20 @@ public class TableRowHeightController {
      */
     private void uninstallListeners() {
         table.removePropertyChangeListener(getPropertyChangeListener());
-        table.getModel().removeTableModelListener(getTableModelListener());
+        // An updateModel override may have wired the current model itself.
+        TableModel currentModel = table.getModel();
+        currentModel.removeTableModelListener(getTableModelListener());
+        if (listeningModel != null && listeningModel != currentModel) {
+            listeningModel.removeTableModelListener(getTableModelListener());
+        }
+        listeningModel = null;
         // whatever else turns out to be needed
     }
 
     private void installListeners() {
         table.addPropertyChangeListener(getPropertyChangeListener());
-        table.getModel().addTableModelListener(getTableModelListener());
+        listeningModel = table.getModel();
+        listeningModel.addTableModelListener(getTableModelListener());
         // whatever else turns out to be needed
     }
 
