@@ -233,7 +233,7 @@ public class ColumnFactory {
      * @param table the table containing the columns
      */
     public int getPreferredScrollableViewportWidth(JXTable table) {
-        int w = 0;
+        long w = 0;
         int count;
         if (table.getVisibleColumnCount() < 0) {
             count = table.getColumnCount();
@@ -246,9 +246,9 @@ public class ColumnFactory {
             w += table.getColumn(i).getPreferredWidth();
         }
         if (count < table.getVisibleColumnCount()) {
-            w += (table.getVisibleColumnCount() - count) * 75;
+            w += (table.getVisibleColumnCount() - count) * 75L;
         }
-        return w;
+        return (int) Math.min(w, Integer.MAX_VALUE);
         
     }
     /**
