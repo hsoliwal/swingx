@@ -5,7 +5,6 @@
 package org.jdesktop.swingx.table;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.InvocationTargetException;
@@ -112,7 +111,6 @@ public class TableRowHeightControllerLifecycleTest {
                 if (listener == controller[0].getTableModelListener()) matches++;
             }
             assertEquals(1, matches);
-            assertSame(newModel[0], newModel[0]);
             controller[0].release();
         });
     }
