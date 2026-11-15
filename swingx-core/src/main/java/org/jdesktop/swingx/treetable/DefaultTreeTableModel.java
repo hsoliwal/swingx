@@ -21,6 +21,7 @@
 package org.jdesktop.swingx.treetable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.tree.TreePath;
@@ -333,16 +334,18 @@ public class DefaultTreeTableModel extends AbstractTreeTableModel {
         TreeTableNode node = aNode;
 
         while (node != root) {
-            path.add(0, node);
+            path.add(node);
 
             node = node.getParent();
         }
 
         if (node == root) {
-            path.add(0, node);
+            path.add(node);
         }
 
-        return path.toArray(new TreeTableNode[0]);
+        // Reverse once instead of shifting the accumulated path for every ancestor.
+        Collections.reverse(path);
+        return path.toArray(new TreeTableNode[path.size()]);
     }
 
     /**
