@@ -2950,8 +2950,8 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
         }
         // the heigth is reset in setVisualRowCount
         if (calculatedPrefScrollableViewportSize.height <= 0) {
-            calculatedPrefScrollableViewportSize.height = getVisibleRowCount()
-                    * getRowHeight();
+            calculatedPrefScrollableViewportSize.height = (int) Math.min(
+                    (long) getVisibleRowCount() * getRowHeight(), Integer.MAX_VALUE);
         }
         return new Dimension(calculatedPrefScrollableViewportSize);
     }
@@ -4467,6 +4467,11 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      */
     @Override
     public void setRowHeight(int rowHeight) {
+        if (rowHeight > 0) {
+            // The superclass notifies listeners before returning. Invalidate
+            // the cached height first so they observe the new row geometry.
+            resetCalculatedScrollableSize(false);
+        }
         super.setRowHeight(rowHeight);
         if (rowHeight > 0) {
             isXTableRowHeightSet = true;

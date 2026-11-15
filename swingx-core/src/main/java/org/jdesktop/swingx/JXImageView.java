@@ -39,6 +39,8 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.AffineTransformOp;
@@ -48,6 +50,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.EventListener;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -227,8 +230,12 @@ public class JXImageView extends JXPanel {
         boolean old = isEditable();
         this.editable = editable;
         if(editable) {
-            addMouseMotionListener(moveHandler);
-            addMouseListener(moveHandler);
+            if (!isMoveHandlerRegistered(getMouseMotionListeners())) {
+                addMouseMotionListener(moveHandler);
+            }
+            if (!isMoveHandlerRegistered(getMouseListeners())) {
+                addMouseListener(moveHandler);
+            }
             this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             try {
                 this.setTransferHandler(new DnDHandler());
@@ -237,12 +244,29 @@ public class JXImageView extends JXPanel {
                 fireError(ex);
             }
         } else {
-            removeMouseMotionListener(moveHandler);
-            removeMouseListener(moveHandler);
+            for (MouseMotionListener listener : getMouseMotionListeners()) {
+                if (listener == moveHandler) {
+                    removeMouseMotionListener(listener);
+                }
+            }
+            for (MouseListener listener : getMouseListeners()) {
+                if (listener == moveHandler) {
+                    removeMouseListener(listener);
+                }
+            }
             this.setCursor(Cursor.getDefaultCursor());
             setTransferHandler(null);
         }
         firePropertyChange("editable", old, isEditable());
+    }
+
+    private boolean isMoveHandlerRegistered(EventListener[] listeners) {
+        for (EventListener listener : listeners) {
+            if (listener == moveHandler) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
