@@ -49,9 +49,7 @@ public class TableRowHeightController {
     private TableModel listeningModel;
     // A reinstall on the same table must not inherit its previous queued work.
     private long installation;
-    private TableModel listenerModel;
-    // Primitive generations invalidate deferred EDT work without per-rebind tokens.
-    private long tableGeneration;
+    // A->B->A must not replay queued row work, without allocating tokens.
     private long modelGeneration;
     private TableModelListener tableModelListener;
     private PropertyChangeListener tablePropertyListener;
@@ -82,8 +80,6 @@ public class TableRowHeightController {
         release();
         if (table != null) {
             this.table = table;
-            ++tableGeneration;
-            ++modelGeneration;
             installListeners();
             updatePreferredRowHeights();
         }
@@ -97,8 +93,7 @@ public class TableRowHeightController {
         if (table == null)
             return;
         installation++;
-        ++tableGeneration;
-        ++modelGeneration;
+        modelGeneration++;
         uninstallListeners();
         table = null;
     }
@@ -144,14 +139,6 @@ public class TableRowHeightController {
             listeningModel = currentModel;
             listeningModel.addTableModelListener(getTableModelListener());
         }
-        if (oldValue != null && oldValue != listenerModel) {
-            oldValue.removeTableModelListener(getTableModelListener());
-        }
-        if (listenerModel != null) {
-            listenerModel.removeTableModelListener(getTableModelListener());
-        }
-        listenerModel = table.getModel();
-        listenerModel.addTableModelListener(getTableModelListener());
         updatePreferredRowHeights();
     }
 
@@ -176,6 +163,8 @@ public class TableRowHeightController {
                 }
                 final JTable installedTable = table;
                 final long currentInstallation = installation;
+                // Model callbacks remain ordered; only stale row work is invalidated.
+                modelGeneration++;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -183,17 +172,6 @@ public class TableRowHeightController {
                                 || installation != currentInstallation
                                 || evt.getSource() != installedTable) {
                             return;
-                if (!"model".equals(evt.getPropertyName()) || table == null) {
-                    return;
-                }
-                final long binding = tableGeneration;
-                // Invalidate old row work even when a model is replaced and restored.
-                ++modelGeneration;
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (binding == tableGeneration && table != null) {
-                            updateModel((TableModel) evt.getOldValue());
                         }
                         updateModel((TableModel) evt.getOldValue());
                     }
@@ -209,30 +187,17 @@ public class TableRowHeightController {
             public void tableChanged(final TableModelEvent e) {
                 final JTable installedTable = table;
                 final long currentInstallation = installation;
+                final long currentModelGeneration = modelGeneration;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
                         if (table == null || table != installedTable
                                 || installation != currentInstallation
+                                || modelGeneration != currentModelGeneration
                                 || (e != null && e.getSource() != table.getModel())) {
                             return;
                         }
                         invokedTableChanged(e);
-                final long binding = tableGeneration;
-                final long modelVersion = modelGeneration;
-                final TableModel sourceModel = listenerModel;
-                if (table == null || table.getModel() != sourceModel
-                        || (e != null && e.getSource() != sourceModel)) {
-                    return;
-                }
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (table != null && binding == tableGeneration
-                                && modelVersion == modelGeneration
-                                && table.getModel() == sourceModel) {
-                            invokedTableChanged(e);
-                        }
                     }
                 });
             }
@@ -263,10 +228,6 @@ public class TableRowHeightController {
             listeningModel.removeTableModelListener(getTableModelListener());
         }
         listeningModel = null;
-        if (listenerModel != null) {
-            listenerModel.removeTableModelListener(getTableModelListener());
-            listenerModel = null;
-        }
         // whatever else turns out to be needed
     }
 
@@ -274,8 +235,6 @@ public class TableRowHeightController {
         table.addPropertyChangeListener(getPropertyChangeListener());
         listeningModel = table.getModel();
         listeningModel.addTableModelListener(getTableModelListener());
-        listenerModel = table.getModel();
-        listenerModel.addTableModelListener(getTableModelListener());
         // whatever else turns out to be needed
     }
 
