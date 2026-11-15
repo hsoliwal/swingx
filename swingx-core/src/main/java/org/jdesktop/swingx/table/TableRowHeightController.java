@@ -45,6 +45,10 @@ import javax.swing.table.TableModel;
 public class TableRowHeightController {
 
     private JTable table;
+    private TableModel listenerModel;
+    // Primitive generations invalidate deferred EDT work without per-rebind tokens.
+    private long tableGeneration;
+    private long modelGeneration;
     private TableModelListener tableModelListener;
     private PropertyChangeListener tablePropertyListener;
 
@@ -74,6 +78,8 @@ public class TableRowHeightController {
         release();
         if (table != null) {
             this.table = table;
+            ++tableGeneration;
+            ++modelGeneration;
             installListeners();
             updatePreferredRowHeights();
         }
@@ -86,6 +92,8 @@ public class TableRowHeightController {
     public void release() {
         if (table == null)
             return;
+        ++tableGeneration;
+        ++modelGeneration;
         uninstallListeners();
         table = null;
     }
@@ -120,10 +128,14 @@ public class TableRowHeightController {
      * @param oldValue
      */
     protected void updateModel(TableModel oldValue) {
-        if (oldValue != null) {
+        if (oldValue != null && oldValue != listenerModel) {
             oldValue.removeTableModelListener(getTableModelListener());
         }
-        table.getModel().addTableModelListener(getTableModelListener());
+        if (listenerModel != null) {
+            listenerModel.removeTableModelListener(getTableModelListener());
+        }
+        listenerModel = table.getModel();
+        listenerModel.addTableModelListener(getTableModelListener());
         updatePreferredRowHeights();
     }
 
@@ -143,10 +155,16 @@ public class TableRowHeightController {
              * @param evt
              */
             private void invokedPropertyChanged(final PropertyChangeEvent evt) {
+                if (!"model".equals(evt.getPropertyName()) || table == null) {
+                    return;
+                }
+                final long binding = tableGeneration;
+                // Invalidate old row work even when a model is replaced and restored.
+                ++modelGeneration;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        if ("model".equals(evt.getPropertyName())) {
+                        if (binding == tableGeneration && table != null) {
                             updateModel((TableModel) evt.getOldValue());
                         }
                         
@@ -161,10 +179,21 @@ public class TableRowHeightController {
         TableModelListener l = new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
+                final long binding = tableGeneration;
+                final long modelVersion = modelGeneration;
+                final TableModel sourceModel = listenerModel;
+                if (table == null || table.getModel() != sourceModel
+                        || (e != null && e.getSource() != sourceModel)) {
+                    return;
+                }
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        invokedTableChanged(e);
+                        if (table != null && binding == tableGeneration
+                                && modelVersion == modelGeneration
+                                && table.getModel() == sourceModel) {
+                            invokedTableChanged(e);
+                        }
                     }
                 });
             }
@@ -185,13 +214,17 @@ public class TableRowHeightController {
      */
     private void uninstallListeners() {
         table.removePropertyChangeListener(getPropertyChangeListener());
-        table.getModel().removeTableModelListener(getTableModelListener());
+        if (listenerModel != null) {
+            listenerModel.removeTableModelListener(getTableModelListener());
+            listenerModel = null;
+        }
         // whatever else turns out to be needed
     }
 
     private void installListeners() {
         table.addPropertyChangeListener(getPropertyChangeListener());
-        table.getModel().addTableModelListener(getTableModelListener());
+        listenerModel = table.getModel();
+        listenerModel.addTableModelListener(getTableModelListener());
         // whatever else turns out to be needed
     }
 
