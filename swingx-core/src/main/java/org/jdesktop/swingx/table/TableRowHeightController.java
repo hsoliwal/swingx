@@ -46,8 +46,9 @@ public class TableRowHeightController {
 
     private JTable table;
     private TableModel listenerModel;
-    private Object tableBinding;
-    private Object modelBinding;
+    // Primitive generations invalidate deferred EDT work without per-rebind tokens.
+    private long tableGeneration;
+    private long modelGeneration;
     private TableModelListener tableModelListener;
     private PropertyChangeListener tablePropertyListener;
 
@@ -77,8 +78,8 @@ public class TableRowHeightController {
         release();
         if (table != null) {
             this.table = table;
-            tableBinding = new Object();
-            modelBinding = tableBinding;
+            ++tableGeneration;
+            ++modelGeneration;
             installListeners();
             updatePreferredRowHeights();
         }
@@ -91,8 +92,8 @@ public class TableRowHeightController {
     public void release() {
         if (table == null)
             return;
-        tableBinding = null;
-        modelBinding = null;
+        ++tableGeneration;
+        ++modelGeneration;
         uninstallListeners();
         table = null;
     }
@@ -154,16 +155,16 @@ public class TableRowHeightController {
              * @param evt
              */
             private void invokedPropertyChanged(final PropertyChangeEvent evt) {
-                if (!"model".equals(evt.getPropertyName()) || tableBinding == null) {
+                if (!"model".equals(evt.getPropertyName()) || table == null) {
                     return;
                 }
-                final Object binding = tableBinding;
+                final long binding = tableGeneration;
                 // Invalidate old row work even when a model is replaced and restored.
-                modelBinding = new Object();
+                ++modelGeneration;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        if (binding == tableBinding) {
+                        if (binding == tableGeneration && table != null) {
                             updateModel((TableModel) evt.getOldValue());
                         }
                         
@@ -178,17 +179,18 @@ public class TableRowHeightController {
         TableModelListener l = new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
-                final Object binding = tableBinding;
-                final Object modelVersion = modelBinding;
+                final long binding = tableGeneration;
+                final long modelVersion = modelGeneration;
                 final TableModel sourceModel = listenerModel;
-                if (binding == null || table.getModel() != sourceModel
+                if (table == null || table.getModel() != sourceModel
                         || (e != null && e.getSource() != sourceModel)) {
                     return;
                 }
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        if (binding == tableBinding && modelVersion == modelBinding
+                        if (table != null && binding == tableGeneration
+                                && modelVersion == modelGeneration
                                 && table.getModel() == sourceModel) {
                             invokedTableChanged(e);
                         }
