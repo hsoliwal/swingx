@@ -417,7 +417,7 @@ public class JXBusyLabel extends JLabel {
         int old = getDelay();
         this.delay = delay;
         if (old != getDelay()) {
-            if (busy != null && busy.isRunning()) {
+            if (busy != null && (busy.isRunning() || parked)) {
                 busy.setDelay(getDelay());
             }
             firePropertyChange("delay", old, getDelay());

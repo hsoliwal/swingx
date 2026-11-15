@@ -15,6 +15,19 @@ Other repositories have copies of the entire original SVN revision history:
 
 See also this Stack Overflow question and its answers and comments: https://stackoverflow.com/questions/6818528/what-is-the-status-of-swinglabs-swingx-post-acquisition
 
+## Fork compatibility contract
+
+This fork is an optimized, backward-compatible superset of the original SwingX
+library and its inherited upstream APIs. Applications written against that
+subset must retain their public APIs and behavior when they use this fork.
+Fork-specific APIs, features and optimizations are also part of the supported
+superset and must be preserved when changes are integrated.
+
+Compatibility is directional: upstream SwingX is not required to implement this
+fork's extensions. SwingX extends Swing through its own component APIs; this
+contract does not make SwingX, Swing or SWT interchangeable toolkits. Release
+qualification covers both inherited behavior and the additional fork behavior.
+
 ## Eclipse import and the SwingXSet demo program
 
 The original SwingX source code included Maven pom.xml files, but did not include any development
