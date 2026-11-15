@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "passive_receipt": true,
+  "license": "Apache-2.0",
+  "workorder": "ui-superset-efficiency-20261115",
+  "repository": "hsoliwal/swingx",
+  "base_revision": "dbf9902c086b6439b96d8f4256b7ce30d3d311eb",
+  "canonical_engine": {
+    "repository": "hsoliwal/com.synexia",
+    "owner_revision": "b6638d5b1cdfe0227a16ce1e8bc653d071132f44",
+    "owners": [
+      "M3HashPinnedJavaSnapshotRecipe",
+      "M3HashPinnedTextSnapshotRecipe"
+    ],
+    "packet_location": "synexia-openrewrite-recipes/crates/ui-superset-efficiency-20261115",
+    "recipe_ids": [
+      "ui-superset-efficiency-20261115-swingx-java-r2"
+    ]
+  },
+  "outputs": [
+    {
+      "path": "swingx-core/src/main/java/org/jdesktop/swingx/treetable/DefaultTreeTableModel.java",
+      "before_sha256": "4039a887bdf3ab9904621d1ae0d3323bb15418fd7d56e66ce557df35901dfcaa",
+      "after_sha256": "e94db938e94fac0310d7cb67fa2e2f300a61ec6b4a9f3cd51e62702e938c499c"
+    },
+    {
+      "path": "swingx-core/src/test/java/org/jdesktop/swingx/treetable/DefaultTreeTableModelPathTest.java",
+      "before_sha256": "ABSENT",
+      "after_sha256": "f5fecb88a3d28ce17f163a2dbf05886c1a433ad4a728f80bba30ea03fb3e61fc"
+    }
+  ],
+  "implementation": "Construct root paths with append, one reversal and an exact-sized result array, eliminating quadratic front-insertion shifts.",
+  "compatibility_contract": "One-way upstream compatibility: retain API descriptors, identities, callback demand and order, threading, lifecycle and prior optimizations. Widgets retain their existing viewport ownership.",
+  "sdk_verification": {
+    "exact_output": "PASS",
+    "fixed_point_changed_files": 0,
+    "input_order_independence": "PASS",
+    "source_drift_refusal": "PASS",
+    "required_input_missing_refusal": "PASS",
+    "duplicate_target_refusal": "PASS"
+  },
+  "qualification": {
+    "existing_and_added_junit_tests_passed": 38,
+    "same_tests_interpreter_mode_passed": 38,
+    "existing_tests": 29,
+    "added_edt_contract_tests": 9,
+    "source_target": "Java11 compiled with Java21.0.13+9",
+    "jvm_fields_and_method_descriptors": "UNCHANGED",
+    "frozen_oracle_and_workload": "UNCHANGED across R1 and R2"
+  },
+  "resource_observation": {
+    "scenario": "Frozen local path workload; median of three diagnostic timing samples",
+    "nodes65536_before_ns": 412790448,
+    "nodes65536_after_ns": 1336859,
+    "nodes65536_before_allocated_bytes": 1116256,
+    "nodes65536_after_allocated_bytes": 1116232,
+    "nodes1_before_ns": 88,
+    "nodes1_after_ns": 175,
+    "nodes1_allocated_bytes_both": 104,
+    "limitation": "Root-only timing was slower. No universal timing or application-wide speedup claim."
+  },
+  "remaining_gates": [
+    "Strict owner compilation retains existing Java21 this-escape warnings in three unchanged constructor paths; tests and workload pass strict compilation.",
+    "Full offline Maven reactor stopped before compilation because inherited maven-enforcer-plugin1.0 was unavailable; subsequent14 modules skipped.",
+    "Complete GUI/JXTreeTable integration was not executed."
+  ],
+  "scope": "Only the listed outputs are admitted by this packet. This receipt does not assert whole-toolkit completion, universal speedup, release approval or full platform qualification."
+}
