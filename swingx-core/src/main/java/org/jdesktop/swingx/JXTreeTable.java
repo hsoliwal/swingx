@@ -3028,7 +3028,8 @@ public class JXTreeTable extends JXTable {
                 // adjust height to table height
                 // It is not enough to set the height to treeTable.getHeight()
                 // JW: why not?
-                h = treeTable.getRowCount() * this.getRowHeight();
+                h = (int) Math.min(Integer.MAX_VALUE,
+                        (long) treeTable.getRowCount() * this.getRowHeight());
                 int hierarchicalC = treeTable.getHierarchicalColumn();
                 // JW: re-introduced to fix Issue 1168-swingx
                 if (hierarchicalC >= 0) {
