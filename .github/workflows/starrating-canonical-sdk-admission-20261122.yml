@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: Apache-2.0
+# Temporary, reviewable qualification branch. NOT a SwingX runtime change.
+name: StarRating canonical Synexia OpenRewrite SDK admission
+
+on:
+  push:
+    branches:
+      - codex/swingx-starrating-sdk-admission-20261122
+  pull_request:
+    branches:
+      - codex/swingx-starrating-canonical-receiver-20261122
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-recipe:
+    name: Exact Synexia SDK output, fixed point and source-refusal
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact SwingX receiving files
+        uses: actions/checkout@v4
+      - name: Java 21 for canonical OpenRewrite 8.17.1
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Checkout pinned Synexia source and first-party recipe
+        uses: actions/checkout@v4
+        with:
+          repository: hsoliwal/com.synexia
+          ref: 1957cb3d2c9d1ecf8d5196bb5c4ca62f93bed497
+          path: synexia
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            synexia-openrewrite-recipes
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Reject any receiver or template drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="synexia/synexia-openrewrite-recipes/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-swingx-star-rating-20261121"
+          SRC="swingx-core/src/main/java/org/jdesktop/swingx/JXStarRating.java"
+          TEST="swingx-core/src/test/java/org/jdesktop/swingx/JXStarRatingTest.java"
+          echo '6b79454534ba4aeb33f9390f858d83ca8d84c88ea497aeb8c6bc731160c30b7e  '${SRC} | sha256sum -c -
+          echo 'a789663b7f48e272f38d7f1ce9e80f87c0bbb00d914f58df3110bd96d34a9603  '${TEST} | sha256sum -c -
+          cmp -s "$SRC" "$ROOT/JXStarRating.java.txt"
+          cmp -s "$TEST" "$ROOT/JXStarRatingTest.java.txt"
+          grep -Fq "6b79454534ba4aeb33f9390f858d83ca8d84c88ea497aeb8c6bc731160c30b7e" "$ROOT/manifest.tsv"
+          grep -Fq "a789663b7f48e272f38d7f1ce9e80f87c0bbb00d914f58df3110bd96d34a9603" "$ROOT/manifest.tsv"
+          echo "STAR_RATING_RECEIVER_EXACT_SOURCE_PASS"
+      - name: Run six real canonical Maven/OpenRewrite SDK tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -DskipTests=false -DfailIfNoTests=true \
+            -f synexia/synexia-openrewrite-recipes/recipe-crates/m3-nebula-swingx-star-rating-20261121/sdk-pom.xml test
+      - name: Require an actual six-case Surefire/JUnit5 report
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          reports = list(Path('synexia/synexia-openrewrite-recipes/recipe-crates/m3-nebula-swingx-star-rating-20261121/target/surefire-reports').glob('TEST-*.xml'))
+          target = [p for p in reports if 'M3NebulaSwingXStarRatingRecipeTest' in p.name]
+          if len(target) != 1:
+              raise SystemExit(f'Expected exactly one StarRating SDK test XML, found {target}')
+          root = ET.parse(target[0]).getroot()
+          fields = {name:int(root.attrib.get(name,0)) for name in ('tests','failures','errors','skipped')}
+          print('CANONICAL_OPENREWRITE_SDK_SUREFIRE', fields)
+          if fields != {'tests':6,'failures':0,'errors':0,'skipped':0}:
+              raise SystemExit('Real canonical StarRating SDK admission gate FAILED')
+          PY
+      - name: Archive real SDK JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: starrating-canonical-openrewrite-sdk-receipt
+          if-no-files-found: warn
+          path: synexia/synexia-openrewrite-recipes/recipe-crates/m3-nebula-swingx-star-rating-20261121/target/surefire-reports/
