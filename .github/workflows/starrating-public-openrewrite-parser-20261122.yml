@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Hitesh Soliwal and contributors
+# SPDX-License-Identifier: Apache-2.0
+name: StarRating public OpenRewrite 8.17.1 parser diagnostics
+
+on:
+  push:
+    branches:
+      - codex/swingx-starrating-parser-diagnostics-20261122
+  pull_request:
+    branches:
+      - codex/swingx-starrating-canonical-receiver-20261122
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parser-receiver:
+    name: Public OpenRewrite parser/printer 4-test source integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run actual public OpenRewrite 8.17.1 parser/printer diagnostics
+        run: |
+          mvn -B -ntp -DfailIfNoTests=true -Dm3.receiver.root="$GITHUB_WORKSPACE" \
+            -f proofs/starrating-openrewrite-parser-20261122/pom.xml test
+      - name: Require four executed, passing Surefire JUnit5 tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          base = Path("proofs/starrating-openrewrite-parser-20261122/target/surefire-reports")
+          files = list(base.glob("TEST-*StarRatingOpenRewriteParserProofTest.xml"))
+          if len(files) != 1:
+              raise SystemExit(f"Missing exact parser proof XML: {files}")
+          root = ET.parse(files[0]).getroot()
+          result = {k:int(root.attrib.get(k,0)) for k in ("tests","failures","errors","skipped")}
+          print("STARRATING_PUBLIC_PARSER_RECEIVER",result)
+          if result != {"tests":4,"failures":0,"errors":0,"skipped":0}:
+              raise SystemExit("Public parser diagnostic not qualified")
+          PY
+      - name: Archive executed public parser-only SDK evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: starrating-public-openrewrite-parser-receipt
+          if-no-files-found: warn
+          path: proofs/starrating-openrewrite-parser-20261122/target/surefire-reports/
